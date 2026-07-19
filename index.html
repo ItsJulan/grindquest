@@ -756,7 +756,8 @@ function showSpinner(winner){const ov=document.createElement('div');ov.className
   requestAnimationFrame(anim)}
 
 // ─── MINI QUESTS ───
-function checkMiniReset(){const t=tdy();if(D.miniDate!==t){D.miniDone=[];D.miniDate=t;save()}}
+function miniDay(){const n=new Date();if(n.getHours()<6)n.setDate(n.getDate()-1);return n.toISOString().slice(0,10)}
+function checkMiniReset(){const t=miniDay();if(D.miniDate!==t){D.miniDone=[];D.miniDate=t;save()}}
 function completeMini(id){checkMiniReset();if(D.miniDone.includes(id))return;const mq=MINI_QUESTS.find(x=>x.id===id);if(!mq)return;
   D.miniDone.push(id);updateStreak();
   const sm=sMult(),xp=Math.floor(mq.xp*sm),coins=Math.floor(mq.coins*sm*coinB(''));
@@ -770,8 +771,8 @@ function uncompleteMini(id){checkMiniReset();if(!D.miniDone.includes(id))return;
   D.xp=Math.max(0,D.xp-xp);D.totalXp=Math.max(0,D.totalXp-xp);D.coins=Math.max(0,D.coins-coins);D.bpXp=Math.max(0,D.bpXp-5);
   addLog(`Undo: ${mq.name}`);save();render()}
 function renderMini(){checkMiniReset();
-  const now=new Date(),eod=new Date(now);eod.setHours(23,59,59,999);
-  document.getElementById('miniReset').textContent=`resets in ~${Math.ceil((eod-now)/36e5)}h`;
+  const now=new Date();let next6=new Date(now);next6.setHours(6,0,0,0);if(now>=next6)next6.setDate(next6.getDate()+1);
+  document.getElementById('miniReset').textContent=`resets in ~${Math.ceil((next6-now)/36e5)}h`;
   document.getElementById('miniList').innerHTML=MINI_QUESTS.map(mq=>{const done=D.miniDone.includes(mq.id);const sm=sMult();
     return`<div class="mqi ch-card ${done?'done':''}" data-id="${mq.id}" style="cursor:pointer"><div style="font-size:22px;margin-bottom:4px">${mq.icon}</div><div class="ch-name">${mq.name}</div><div class="ch-foot"><span style="color:var(--gold);font-weight:700;font-size:11px">+${Math.floor(mq.xp*sm)} XP · +${Math.floor(mq.coins*sm)} ★</span><span style="font-size:14px">${done?'✅':''}</span></div></div>`}).join('');
   document.querySelectorAll('.mqi').forEach(el=>el.addEventListener('click',()=>{if(D.miniDone.includes(el.dataset.id))uncompleteMini(el.dataset.id);else completeMini(el.dataset.id)}))}
