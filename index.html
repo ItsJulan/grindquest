@@ -831,11 +831,29 @@ async function doSync(){
     syncPaused=true;
     const merged={...defaults(),...cloud};delete merged._lastSync;
     D=merged;D._lastSync=cloud._lastSync;
-    save();render();applyCosmetics();
+    _origSave();render();applyCosmetics();
     syncPaused=false;
     showSyncStatus('Pulled latest from cloud','ok');
   }
 }
+function startLiveSync(){
+  if(!fbReady||!syncCode)return;
+  if(syncRef)syncRef.off();
+  syncRef=firebase.database().ref('saves/'+syncCode);
+  syncRef.on('value',snap=>{
+    if(syncPaused)return;
+    const cloud=snap.val();
+    if(!cloud||!cloud._lastSync)return;
+    if(cloud._lastSync>(D._lastSync||0)){
+      syncPaused=true;
+      const merged={...defaults(),...cloud};delete merged._lastSync;
+      D=merged;D._lastSync=cloud._lastSync;
+      _origSave();render();applyCosmetics();
+      syncPaused=false;
+    }
+  });
+}
+function stopLiveSync(){if(syncRef){syncRef.off();syncRef=null}}
 
 // Override save to also push to cloud
 const _origSave=save;
@@ -847,8 +865,9 @@ document.getElementById('syncClose').addEventListener('click',()=>document.getEl
 document.getElementById('syncModal').addEventListener('click',e=>{if(e.target.id==='syncModal')document.getElementById('syncModal').classList.remove('show')});
 
 document.getElementById('syncGen').addEventListener('click',()=>{
+  stopLiveSync();
   const code=genSyncCode();saveSyncCode(code);
-  if(fbReady)cloudSave();
+  if(fbReady){cloudSave();startLiveSync()}
   showSyncStatus('Code generated! Use this on your other device.','ok');
 });
 document.getElementById('syncCopy').addEventListener('click',()=>{
@@ -866,6 +885,7 @@ document.getElementById('syncLink').addEventListener('click',async()=>{
     }else{
       cloudSave();showSyncStatus('Linked! No cloud data yet — pushed yours.','info');
     }
+    startLiveSync();
   }else{showSyncStatus('Linked! Firebase not loaded — will sync when hosted.','info')}
 });
 document.getElementById('syncPull').addEventListener('click',async()=>{
@@ -879,7 +899,7 @@ document.getElementById('syncPush').addEventListener('click',async()=>{
 });
 document.getElementById('syncDisconnect').addEventListener('click',()=>{
   if(!confirm('Disconnect sync? Local data stays.'))return;
-  syncCode=null;localStorage.removeItem(SYNC_KEY);updateSyncUI();
+  stopLiveSync();syncCode=null;localStorage.removeItem(SYNC_KEY);updateSyncUI();
   showSyncStatus('Disconnected','info');
 });
 
@@ -901,7 +921,7 @@ function initFirebase(){
     fbReady=true;
     loadSyncCode();
     updateSyncUI();
-    if(syncCode)doSync();
+    if(syncCode){doSync();startLiveSync()}
   }catch(e){console.warn('Firebase init failed:',e)}
 }
 
