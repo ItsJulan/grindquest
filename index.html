@@ -1,3 +1,6 @@
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>GrindQuest — Assignment Tracker</title>
 <style>
   :root{--bg-deep:#0b1118;--bg-panel:#131b27;--bg-card:#1a2536;--bg-card-hover:#1f2d42;--bg-input:#0e1620;--border:#253245;--border-glow:#2a3f5a;--text:#d4cfc8;--text-dim:#7a8696;--text-bright:#f0ece6;--gold:#f5a623;--gold-dim:#b07a15;--gold-glow:rgba(245,166,35,.15);--xp-bar:#f5a623;--xp-bar-bg:#2a2010;--green:#4ade80;--green-dim:#166534;--green-glow:rgba(74,222,128,.12);--cyan:#22d3ee;--cyan-dim:#0e4f5a;--purple:#a78bfa;--purple-dim:#3b2d6b;--red:#f87171;--red-dim:#5a1a1a;--accent-gradient:linear-gradient(135deg,#f5a623,#e08a10);--panel-shadow:0 2px 12px rgba(0,0,0,.4);--crit-color:#ff4444;--crit-glow:rgba(255,68,68,.4);--xp-gradient:var(--accent-gradient)}
@@ -194,6 +197,93 @@
   .sync-status.ok{display:block;background:var(--green-dim);color:var(--green)}
   .sync-status.err{display:block;background:var(--red-dim);color:var(--red)}
   .sync-status.info{display:block;background:var(--cyan-dim);color:var(--cyan)}
+  /* MOBILE */
+  @media(max-width:480px){
+    .nav{padding:0 6px;gap:0;flex-wrap:nowrap;-webkit-overflow-scrolling:touch}
+    .nav-brand{font-size:12px;margin-right:6px;padding:10px 0;letter-spacing:1px}
+    .nav-tab{padding:10px 7px;font-size:9px;letter-spacing:.3px}
+    .nav-right{gap:6px;margin-left:auto}
+    .sync-btn{padding:4px 7px;font-size:9px}
+    .btn-sm{padding:4px 7px;font-size:9px}
+    .topbar{padding:8px 12px;gap:8px}
+    .level-badge{gap:6px}
+    .level-num{width:34px;height:34px;font-size:15px}
+    .level-info{gap:1px}
+    .level-label{font-size:8px;letter-spacing:.8px}
+    .level-title{font-size:11px}
+    .xp-section{min-width:100px;max-width:none;flex:1}
+    .xp-label{font-size:9px}.xp-numbers{font-size:10px}
+    .xp-bar-outer{height:10px}
+    .stat-chips{gap:4px;width:100%}
+    .sc{padding:3px 6px;font-size:10px}
+    .page{padding:8px 10px}
+    .panel{padding:10px;margin-bottom:8px;border-radius:10px}
+    .pt{font-size:10px;letter-spacing:1px;margin-bottom:8px}
+    .g2{grid-template-columns:1fr;gap:8px}
+    .g3{grid-template-columns:1fr 1fr;gap:6px}
+    .add-form{grid-template-columns:1fr;gap:6px}
+    .input,.sel{padding:10px 12px;font-size:14px;border-radius:10px}
+    .btn{padding:10px 16px;font-size:12px;border-radius:10px}
+    .qi{padding:10px;gap:8px;border-radius:8px}
+    .qname{font-size:12px}
+    .qmeta{font-size:10px;gap:4px}
+    .qrew{font-size:10px}
+    .qdel{opacity:1;font-size:18px;padding:6px}
+    .qreforge{padding:4px 6px;font-size:9px}
+    .ch-card{padding:10px;border-radius:8px}
+    .ch-name{font-size:11px;margin-bottom:5px}
+    .ch-foot{font-size:10px}
+    .sk-row{padding:7px 9px;gap:8px;margin-bottom:5px}
+    .sk-icon{width:26px;height:26px;font-size:13px}
+    .sk-name{font-size:11px}
+    .sk-lv{font-size:13px}
+    .sgrid{grid-template-columns:1fr;gap:6px}
+    .si{padding:10px;border-radius:8px}
+    .si-name{font-size:11px}
+    .si-desc{font-size:9px}
+    .scats{gap:2px}
+    .scat{padding:4px 7px;font-size:9px}
+    .loot-box{padding:12px;border-radius:10px}
+    .inv-item{padding:8px;gap:7px}
+    .inv-name{font-size:11px}
+    .inv-desc{font-size:9px}
+    .tal-grid{grid-template-columns:1fr;gap:6px}
+    .tal{padding:8px;gap:6px}
+    .tal-name{font-size:11px}
+    .tal-desc{font-size:9px}
+    .minion-card{padding:10px}
+    .bp-track{padding:6px 0 10px}
+    .bp-tier{width:60px}
+    .bp-icon{font-size:16px}
+    .bp-name{font-size:7px}
+    .bp-xp-bar{max-width:100%}
+    .prof-head{gap:12px}
+    .prof-av{width:56px;height:56px;font-size:24px;border-radius:12px}
+    .prof-info h2{font-size:16px}
+    .prof-sub{font-size:10px}
+    .pstats{grid-template-columns:repeat(3,1fr);gap:5px}
+    .ps{padding:7px;border-radius:8px}
+    .ps-v{font-size:16px}
+    .ps-l{font-size:8px}
+    .badge-grid{gap:4px}
+    .badge{padding:4px 7px;font-size:10px;border-radius:5px}
+    .log-list{max-height:180px}
+    .le{font-size:10px;padding:3px 5px}
+    .streak-grid{gap:2px}
+    .sd{font-size:9px}
+    .sync-card{padding:20px;border-radius:12px}
+    .sync-code-display .code{font-size:20px;letter-spacing:3px}
+    .xp-popup{font-size:18px}
+    .xp-popup.crit{font-size:24px}
+    .crit-txt{font-size:40px;letter-spacing:3px}
+    .lu-card{padding:24px 30px}
+    .lu-num{font-size:54px}
+    .spinner-box{padding:12px}
+    .spinner-vp{height:70px}
+    .sitem{width:70px;height:70px}
+    .frow{gap:4px}
+    .fb{padding:4px 7px;font-size:10px}
+  }
   @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 </style>
 
