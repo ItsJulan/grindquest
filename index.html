@@ -183,6 +183,26 @@
   .tal-info{flex:1}.tal-name{font-size:12px;font-weight:600;color:var(--text-bright)}.tal-desc{font-size:10px;color:var(--text-dim)}
   .tal-buy{padding:3px 8px;border:none;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;background:var(--accent-gradient);color:#0b1118;transition:.15s}
   .tal-buy:disabled{opacity:.3;cursor:default}
+  /* SKILL LEVEL UP */
+  .sklup-ov{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.8);cursor:pointer;animation:fi .2s}
+  .sklup-card{text-align:center;padding:0;position:relative;overflow:visible}
+  .sklup-ring{width:160px;height:160px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;position:relative}
+  .sklup-ring::before{content:'';position:absolute;inset:-4px;border-radius:50%;background:conic-gradient(from 0deg,var(--sklup-col),transparent,var(--sklup-col),transparent,var(--sklup-col));animation:sklRingSpin 2s linear infinite;opacity:.8}
+  .sklup-ring::after{content:'';position:absolute;inset:0;border-radius:50%;background:var(--bg-panel);z-index:1}
+  .sklup-inner{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:2px}
+  .sklup-icon{font-size:42px;animation:sklIconPop .6s cubic-bezier(.22,1,.36,1)}
+  .sklup-lv{font-size:48px;font-weight:900;animation:sklLvCount .8s cubic-bezier(.22,1,.36,1)}
+  .sklup-name{font-size:14px;font-weight:700;color:var(--text-bright);margin-top:8px;text-transform:uppercase;letter-spacing:2px}
+  .sklup-sub{font-size:12px;color:var(--text-dim);margin-top:4px}
+  .sklup-boost{display:inline-block;margin-top:10px;padding:4px 14px;border-radius:20px;font-size:12px;font-weight:700;border:1px solid;animation:sklBoostIn .5s .4s cubic-bezier(.22,1,.36,1) both}
+  .sklup-particles{position:absolute;inset:-60px;pointer-events:none;z-index:0}
+  .sklup-p{position:absolute;width:4px;height:4px;border-radius:50%;animation:sklPart 1.5s ease-out forwards}
+  .sklup-dismiss{font-size:11px;color:var(--text-dim);margin-top:18px;opacity:0;animation:fi .3s .8s forwards}
+  @keyframes sklRingSpin{to{transform:rotate(360deg)}}
+  @keyframes sklIconPop{0%{transform:scale(0) rotate(-30deg);opacity:0}50%{transform:scale(1.3) rotate(5deg)}100%{transform:scale(1) rotate(0)}}
+  @keyframes sklLvCount{0%{transform:translateY(20px) scale(.5);opacity:0}40%{transform:translateY(-5px) scale(1.15)}100%{transform:translateY(0) scale(1);opacity:1}}
+  @keyframes sklBoostIn{0%{transform:scale(0);opacity:0}100%{transform:scale(1);opacity:1}}
+  @keyframes sklPart{0%{transform:translate(0,0) scale(1);opacity:1}100%{opacity:0}}
   /* SYNC */
   .sync-btn{background:none;border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:10px;font-weight:700;cursor:pointer;color:var(--cyan);font-family:inherit;transition:.15s;text-transform:uppercase;letter-spacing:.5px}
   .sync-btn:hover{border-color:var(--cyan);background:var(--cyan-dim)}
@@ -610,9 +630,24 @@ function updateStreak(){const t=tdy();if(D.lastActive===t)return;const y=new Dat
 function grantXp(amt){const t=Math.floor(amt*xpB());D.xp+=t;D.totalXp+=t;let up=false;while(D.xp>=xpFor(D.level)){D.xp-=xpFor(D.level);D.level++;up=true;addLog(`LEVEL UP! ${D.level} — ${TITLES[Math.min(D.level-1,TITLES.length-1)]}`)}
   if(up)setTimeout(()=>{showLevelUp(D.level);SFX.levelUp()},400);return t}
 function grantSkillXp(subj,amt){if(!subj)return;if(!D.skills[subj])D.skills[subj]={xp:0,level:1};const sk=D.skills[subj];if(sk.level>=100)return;
-  sk.xp+=Math.floor(amt*(1+D.prestige*P_SKILL));while(sk.level<100&&sk.xp>=sklXp(sk.level)){sk.xp-=sklXp(sk.level);sk.level++;addLog(`${subj} → Lv.${sk.level}!`);if(sk.level%20===0){const b=`${subj}_${sk.level}`;if(!D.badges.includes(b)){D.badges.push(b);addLog(`Badge: ${subj} Lv.${sk.level}!`)}}if(sk.level===100)addLog(`${subj} MASTERED!`)}}
+  sk.xp+=Math.floor(amt*(1+D.prestige*P_SKILL));const lvls=[];while(sk.level<100&&sk.xp>=sklXp(sk.level)){sk.xp-=sklXp(sk.level);sk.level++;lvls.push(sk.level);addLog(`${subj} → Lv.${sk.level}!`);if(sk.level%20===0){const b=`${subj}_${sk.level}`;if(!D.badges.includes(b)){D.badges.push(b);addLog(`Badge: ${subj} Lv.${sk.level}!`)}}if(sk.level===100)addLog(`${subj} MASTERED!`)}
+  if(lvls.length)setTimeout(()=>showSkillUp(subj,lvls[lvls.length-1]),600)}
 
 // ─── EFFECTS ───
+function showSkillUp(subj,level){
+  const si=SUBS.findIndex(s=>s.name===subj),sub=SUBS[si],col=SCOLS[si%SCOLS.length]||'#f5a623';
+  const isMastery=level===100,isMilestone=level%20===0;
+  const o=document.createElement('div');o.className='sklup-ov';o.style.setProperty('--sklup-col',col);
+  let particles='';for(let i=0;i<24;i++){const a=Math.random()*360,d=60+Math.random()*80,dur=.8+Math.random()*.8;
+    const x=Math.cos(a*Math.PI/180)*d,y=Math.sin(a*Math.PI/180)*d;
+    particles+=`<div class="sklup-p" style="left:50%;top:50%;background:${col};box-shadow:0 0 6px ${col};animation-duration:${dur}s;animation-delay:${Math.random()*.3}s;--tx:${x}px;--ty:${y}px"></div>`}
+  const boostText=level%20===0?`+${Math.floor(level/20)*5}% Coin Boost`:'';
+  o.innerHTML=`<div class="sklup-card"><div class="sklup-particles">${particles}</div><div class="sklup-ring"><div class="sklup-inner"><span class="sklup-icon">${sub?.icon||'⚡'}</span><span class="sklup-lv gm" style="color:${col}">${level}</span></div></div><div class="sklup-name">${subj}</div><div class="sklup-sub">${isMastery?'MASTERED':isMilestone?'Milestone Reached!':'Level Up!'}</div>${boostText?`<div class="sklup-boost" style="color:${col};border-color:${col}">${boostText}</div>`:''}<div class="sklup-dismiss">tap to continue</div></div>`;
+  o.addEventListener('click',()=>o.remove());document.body.appendChild(o);
+  const ps=o.querySelectorAll('.sklup-p');ps.forEach(p=>{const tx=parseFloat(p.style.getPropertyValue('--tx')),ty=parseFloat(p.style.getPropertyValue('--ty'));
+    p.animate([{transform:'translate(0,0) scale(1)',opacity:1},{transform:`translate(${tx}px,${ty}px) scale(0)`,opacity:0}],{duration:parseFloat(p.style.animationDuration)*1000,delay:parseFloat(p.style.animationDelay)*1000,fill:'forwards',easing:'ease-out'})});
+  if(isMastery||isMilestone)SFX.levelUp();else{SFX.complete()}
+  setTimeout(()=>{if(o.parentNode)o.remove()},5000)}
 function showXpPopup(a,el,cr){const p=document.createElement('div');p.className=`xp-popup gm ${cr?'crit':''}`;p.textContent=cr?`CRIT! +${a} XP`:`+${a} XP`;const r=el.getBoundingClientRect();p.style.left=r.left+r.width/2-50+'px';p.style.top=r.top-10+'px';document.body.appendChild(p);setTimeout(()=>p.remove(),1500)}
 function showLevelUp(lv){const o=document.createElement('div');o.className='lu-ov';o.innerHTML=`<div class="lu-card"><div style="font-size:14px;text-transform:uppercase;letter-spacing:4px;color:var(--gold);margin-bottom:8px;font-weight:700">Level Up!</div><div class="lu-num gm">${lv}</div><div style="font-size:18px;color:var(--text-dim);margin-top:8px;font-weight:600">${TITLES[Math.min(lv-1,TITLES.length-1)]}</div><div style="font-size:11px;color:var(--text-dim);margin-top:16px">click to continue</div></div>`;o.addEventListener('click',()=>o.remove());document.body.appendChild(o);setTimeout(()=>{if(o.parentNode)o.remove()},5000)}
 function showCritEffect(el){
@@ -757,7 +792,7 @@ function showSpinner(winner){const ov=document.createElement('div');ov.className
 
 // ─── MINI QUESTS ───
 function miniDay(){const n=new Date();if(n.getHours()<6)n.setDate(n.getDate()-1);return n.toISOString().slice(0,10)}
-function checkMiniReset(){const t=miniDay();if(D.miniDate!==t){D.miniDone=[];D.miniDate=t;save()}}
+function checkMiniReset(){const t=miniDay();if(D.miniDate!==t){D.miniDone=[];D.miniDate=t;if(typeof _origSave==='function')_origSave();else save()}}
 function completeMini(id){checkMiniReset();if(D.miniDone.includes(id))return;const mq=MINI_QUESTS.find(x=>x.id===id);if(!mq)return;
   D.miniDone.push(id);updateStreak();
   const sm=sMult(),xp=Math.floor(mq.xp*sm),coins=Math.floor(mq.coins*sm*coinB(''));
@@ -900,10 +935,12 @@ function showSyncStatus(msg,type){const el=document.getElementById('syncStatus')
 async function cloudSave(){
   if(!fbReady||!syncCode||syncPaused)return;
   try{
+    syncPaused=true;
     const ref=firebase.database().ref('saves/'+syncCode);
-    const payload={...D,_lastSync:Date.now()};
+    const payload={...D};
     await ref.set(payload);
-  }catch(e){console.warn('Cloud save failed:',e)}
+    syncPaused=false;
+  }catch(e){syncPaused=false;console.warn('Cloud save failed:',e)}
 }
 async function cloudPull(){
   if(!fbReady||!syncCode)return null;
@@ -948,7 +985,7 @@ function stopLiveSync(){if(syncRef){syncRef.off();syncRef=null}}
 
 // Override save to also push to cloud
 const _origSave=save;
-save=function(){_origSave();D._lastSync=Date.now();_origSave();cloudSave()};
+save=function(){D._lastSync=Date.now();_origSave();cloudSave()};
 
 // Sync modal events
 document.getElementById('syncBtn').addEventListener('click',()=>{document.getElementById('syncModal').classList.add('show');updateSyncUI()});
