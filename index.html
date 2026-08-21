@@ -827,8 +827,9 @@ function load(){try{const r=localStorage.getItem(SK);if(r)return{...defaults(),.
 function save(){localStorage.setItem(SK,JSON.stringify(D))}
 let D=load(),activeFilter='all',shopCat='all';
 function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
-function tdy(){return new Date().toISOString().slice(0,10)}
-function wkS(){const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-d.getDay());return d.toISOString().slice(0,10)}
+function ymd(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function tdy(){return ymd(new Date())}
+function wkS(){const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-d.getDay());return ymd(d)}
 function addLog(m,x,cr){D.log.unshift({time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),msg:m,xp:x||0,crit:!!cr});if(D.log.length>100)D.log.length=100}
 
 // ─── SEASON RESET ───
@@ -851,7 +852,10 @@ function xpB(){return 1+D.permXB+talBoosts().xp}
 function critCh(){return .12+D.extraCrit+talBoosts().crit}
 
 // ─── STREAK ───
-function updateStreak(){const t=tdy();if(D.lastActive===t)return;const y=new Date(Date.now()-864e5).toISOString().slice(0,10);D.streak=D.lastActive===y?D.streak+1:1;D.lastActive=t;if(!D.streakDays.includes(t))D.streakDays.push(t);if(D.streakDays.length>60)D.streakDays=D.streakDays.slice(-60)}
+function updateStreak(){const t=tdy();if(D.lastActive===t)return;
+  const _y=new Date();_y.setDate(_y.getDate()-1);const y=ymd(_y);
+  if(D.lastActive&&D.lastActive>t){D.lastActive=t;return}   // legacy UTC date sat ahead of local; don't break the streak
+  D.streak=D.lastActive===y?D.streak+1:1;D.lastActive=t;if(!D.streakDays.includes(t))D.streakDays.push(t);if(D.streakDays.length>60)D.streakDays=D.streakDays.slice(-60)}
 
 // ─── XP ───
 function grantXp(amt){const t=Math.floor(amt*xpB());D.xp+=t;D.totalXp+=t;let up=false;while(D.xp>=xpFor(D.level)){D.xp-=xpFor(D.level);D.level++;up=true;addLog(`LEVEL UP! ${D.level} — ${TITLES[Math.min(D.level-1,TITLES.length-1)]}`)}
@@ -1020,7 +1024,7 @@ function showSpinner(winner){const ov=document.createElement('div');ov.className
   requestAnimationFrame(anim)}
 
 // ─── MINI QUESTS ───
-function miniDay(){const n=new Date();if(n.getHours()<6)n.setDate(n.getDate()-1);return n.toISOString().slice(0,10)}
+function miniDay(){const n=new Date();if(n.getHours()<6)n.setDate(n.getDate()-1);return ymd(n)}
 function checkMiniReset(){const t=miniDay();if(D.miniDate!==t){D.miniDone=[];D.miniDate=t;if(typeof _origSave==='function')_origSave();else save()}}
 function completeMini(id){checkMiniReset();if(D.miniDone.includes(id))return;const mq=MINI_QUESTS.find(x=>x.id===id);if(!mq)return;
   D.miniDone.push(id);updateStreak();
@@ -1125,7 +1129,7 @@ function renderProfile(){const title=D.equipped.customtitle||TITLES[Math.min(D.l
 function renderPrestige(){document.getElementById('pSec').innerHTML=`<h3 style="font-size:16px;color:var(--purple);margin-bottom:6px">Prestige</h3><p style="font-size:12px;color:var(--text-dim);margin-bottom:12px">Reset level for permanent bonuses. Req Lv.${P_LVL}. Max ${MAX_P}.</p>${[1,2,3,4,5].map(i=>`<div class="pp ${D.prestige>=i?'active':'locked'}"><span>${D.prestige>=i?'★':'☆'}</span>P${i}: +${i*15}% coins, +${i*10}% skill XP</div>`).join('')}${D.level>=P_LVL&&D.prestige<MAX_P?`<button class="btn btn-p" onclick="doPrestige()" style="margin-top:10px">Prestige</button>`:D.prestige>=MAX_P?'<div style="color:var(--gold);font-weight:700;margin-top:10px">MAX</div>':`<div style="color:var(--text-dim);font-size:12px;margin-top:10px">Need Lv.${P_LVL} (${D.level})</div>`}`}
 function renderLog(){const el=document.getElementById('logList');if(!D.log.length){el.innerHTML='<div style="text-align:center;color:var(--text-dim);padding:12px;font-size:12px">No activity</div>';return}
   el.innerHTML=D.log.slice(0,30).map(l=>`<div class="le"><span class="lt gm">${l.time}</span><span class="lm ${l.crit?'lc':''}">${esc(l.msg)}</span>${l.xp?`<span class="lx gm">+${l.xp}</span>`:''}</div>`).join('')}
-function renderStreak(){const g=document.getElementById('sGrid'),t=new Date(),ts=tdy();let h='';for(let i=27;i>=0;i--){const d=new Date(t);d.setDate(d.getDate()-i);const ds=d.toISOString().slice(0,10);h+=`<div class="sd ${D.streakDays.includes(ds)?'active':''} ${ds===ts?'today':''}">${d.getDate()}</div>`}g.innerHTML=h}
+function renderStreak(){const g=document.getElementById('sGrid'),t=new Date(),ts=tdy();let h='';for(let i=27;i>=0;i--){const d=new Date(t);d.setDate(d.getDate()-i);const ds=ymd(d);h+=`<div class="sd ${D.streakDays.includes(ds)?'active':''} ${ds===ts?'today':''}">${d.getDate()}</div>`}g.innerHTML=h}
 function render(){renderTop();renderSubDD();renderFilters();renderQuests();renderMini();renderSkills('qSk',true);renderSkills('fSk',false);renderChallenges();renderBP();renderMinion();renderTalismans();renderShop();renderProfile();renderPrestige();renderLog();renderStreak()}
 
 function goPage(name){
