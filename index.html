@@ -234,18 +234,18 @@
     .bottom-nav{
       display:flex;position:fixed;left:0;right:0;bottom:0;z-index:300;
       background:var(--bg-panel);border-top:1px solid var(--border);
-      padding:3px 2px calc(3px + env(safe-area-inset-bottom,0px));
+      padding:4px calc(12px + env(safe-area-inset-right,0px)) calc(15px + env(safe-area-inset-bottom,0px)) calc(12px + env(safe-area-inset-left,0px));
       box-shadow:0 -3px 16px rgba(0,0,0,.34);
     }
     .bottom-nav .nav-tab{
       flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
-      gap:2px;padding:9px 1px 8px;border:none;border-top:2px solid transparent;
+      gap:3px;padding:8px 1px 3px;border:none;border-top:2px solid transparent;
       font-size:8.5px;letter-spacing:.1px;line-height:1;overflow:hidden;
     }
     .bottom-nav .nav-tab .ni{font-size:17px;line-height:1;transition:transform .15s}
     .bottom-nav .nav-tab.active{color:var(--gold);border-top-color:var(--gold);background:var(--gold-glow)}
     .bottom-nav .nav-tab.active .ni{transform:translateY(-1px) scale(1.12)}
-    body{padding-bottom:66px}
+    body{padding-bottom:calc(80px + env(safe-area-inset-bottom,0px))}
     body.dg-fullscreen{padding-bottom:0}
     .dg-fullscreen .bottom-nav{display:none}
     .page{padding:12px 13px}
@@ -436,6 +436,30 @@
   .dg-death-stat .v{font-size:18px;font-weight:800;color:var(--gold)}.dg-death-stat .l{font-size:9px;color:var(--text-dim);text-transform:uppercase;margin-top:2px}
   .dg-fullscreen .nav,.dg-fullscreen .topbar{display:none}
   .dg-fullscreen #page-dungeon{height:100vh;display:flex;flex-direction:column}
+  @media(orientation:landscape) and (max-height:500px){
+    .dg-joystick{bottom:calc(10px + env(safe-area-inset-bottom,0px));left:calc(6px + env(safe-area-inset-left,0px));width:88px;height:88px}
+    .dg-dash-btn{bottom:calc(92px + env(safe-area-inset-bottom,0px));right:calc(6px + env(safe-area-inset-right,0px));width:62px;height:62px;font-size:11px}
+    .dg-blink-btn{bottom:calc(18px + env(safe-area-inset-bottom,0px));right:calc(8px + env(safe-area-inset-right,0px));width:58px;height:58px;font-size:10px}
+    .dg-pu-card{width:112px;padding:9px}
+    .dg-death-card{padding:14px 20px}
+    .dg-pu-cards{gap:8px}
+  }
+  .dg-rotate{
+    position:absolute;left:0;right:0;top:44%;z-index:9;display:none;
+    pointer-events:none;text-align:center;transition:opacity .5s;
+  }
+  .dg-rotate .rk{
+    display:inline-block;padding:11px 18px;border-radius:12px;
+    background:rgba(10,10,18,.82);border:1px solid rgba(255,255,255,.14);
+    box-shadow:0 6px 24px rgba(0,0,0,.5);
+  }
+  .dg-rotate .r1{font-size:24px;line-height:1;margin-bottom:6px}
+  .dg-rotate .r2{font-size:12px;font-weight:700;color:#e8e2d8;letter-spacing:.4px}
+  .dg-rotate .r3{font-size:10px;color:#9a9288;margin-top:3px}
+  .dg-rotate.gone{opacity:0}
+  @media(orientation:portrait) and (max-width:560px){
+    .dg-canvas-wrap.active .dg-rotate{display:block}
+  }
   @media(max-width:480px){.dg-pu-card{width:130px;padding:12px}.dg-death-card{padding:20px}.dg-upgrades{grid-template-columns:1fr 1fr}.dg-dash-btn{bottom:104px;right:18px;width:70px;height:70px}.dg-blink-btn{bottom:26px;right:92px;width:62px;height:62px;font-size:11px}.dg-joystick{bottom:40px;left:40px;width:100px;height:100px}}
   @media(max-width:359px){.sc i{display:none}}
   @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
@@ -560,6 +584,11 @@
     <div class="dg-joystick" id="dgJoystick"><div class="dg-joy-knob" id="dgJoyKnob"></div></div>
     <button class="dg-dash-btn" id="dgDashBtn">DASH</button>
     <button class="dg-blink-btn" id="dgBlinkBtn">RIFT</button>
+    <div class="dg-rotate" id="dgRotate"><div class="rk">
+      <div class="r1">📱↻</div>
+      <div class="r2">Turn your phone sideways</div>
+      <div class="r3">The dungeon is built for landscape</div>
+    </div></div>
     <div class="dg-overlay hidden" id="dgPowerUpOv">
       <div style="text-align:center">
         <div style="font-size:14px;font-weight:700;color:var(--gold);margin-bottom:4px;text-transform:uppercase;letter-spacing:2px">Choose a Power-Up</div>
@@ -1314,7 +1343,7 @@ function dgDrawDeco(ctx,d,zi,t){switch(d.t){case 0:if(zi<2){ctx.fillStyle='#5a3a
 function dgGenObs(){
   const rng=dgSR(dgFloor*911+7);dgObs=[];
   const clear=(x,y,r)=>Math.hypot(x-DGW/2,y-(DGH-60))<r;
-  if(dgFloor%5===0){for(let i=0;i<2;i++){const x=90+rng()*(DGW-180),y=200+rng()*160;dgObs.push({t:'pillar',x,y,w:30,h:30})}return}
+  if(dgFloor%5===0){for(let i=0;i<2;i++){const x=90+rng()*(DGW-180),y=Math.min(DGH-80,200+rng()*160);dgObs.push({t:'pillar',x,y,w:30,h:30})}return}
   const np=2+Math.floor(rng()*3);
   for(let i=0;i<np;i++){const vert=rng()<.5,w=vert?28:30+rng()*70,h=vert?30+rng()*70:28;
     const x=60+rng()*(DGW-120-w),y=70+rng()*(DGH-200-h);
@@ -1819,12 +1848,15 @@ let dgFreeRun=false,dgRelicDrop=null,dgRelicDropT=0,dgTrail=[],dgFlames=[],dgMin
 let dgClearT=0,dgHurtT=0;const dgHurtMax=.45;
 let dgObs=[],dgHitstop=0,dgShakeX=0,dgShakeY=0,dgGhosts=[],dgDashQueued=false;
 let dgDashBtn=null,dgDashRdy=true,dgTouchUI=false,dgBlinkRdy=true;
-let dgAlert=null;
+let dgAlert=null,dgRotT=null;
 const DG_DASH_SPD=640,DG_DASH_TIME=.22,DG_DASH_CD=.95,DG_DASH_IFR=.2;
 
 function dgInit(){
   dgCanvas=document.getElementById('dgCanvas');dgCtx=dgCanvas.getContext('2d');
-  window.addEventListener('resize',()=>{dgResize();if(dgSt==='menu')dgBuildPreviews()});
+  window.addEventListener('resize',()=>{dgResize();if(dgSt==='menu')dgBuildPreviews();
+    const rt=document.getElementById('dgRotate');
+    if(rt&&dgSt==='playing'&&innerHeight>innerWidth){
+      rt.classList.remove('gone');clearTimeout(dgRotT);dgRotT=setTimeout(()=>rt.classList.add('gone'),4200)}});
   window.addEventListener('keydown',e=>{if(dgSt==='playing'){const k=e.key.toLowerCase();dgKeys[k]=true;
     if((k===' '||k==='shift')&&!e.repeat)dgDashQueued=true;
     if(k==='q'){dgMouse.active=false;dgBlink.held=true}
@@ -1859,7 +1891,12 @@ function dgResize(){
   const dpr=window.devicePixelRatio||1;
   dgCanvas.width=r.width*dpr;dgCanvas.height=r.height*dpr;
   const prev=DGH;
-  DGH=Math.max(520,Math.min(1150,Math.round(DGW*(dgCanvas.height/dgCanvas.width))));
+  // A landscape phone is ~2.5:1. Holding DGH at 520 there forces the whole 800-wide
+  // arena into a short viewport, so it scales down to half size. Letting DGH drop to
+  // 380 nearly doubles the on-screen sprite size. Gated to small viewports so desktop
+  // (including ultrawide windows) is untouched.
+  const _short=Math.min(r.width,r.height)<500&&dgCanvas.width/dgCanvas.height>1.7;
+  DGH=Math.max(_short?380:520,Math.min(1150,Math.round(DGW*(dgCanvas.height/dgCanvas.width))));
   dgScale=Math.min(dgCanvas.width/DGW,dgCanvas.height/DGH);
   dgOx=(dgCanvas.width-DGW*dgScale)/2;dgOy=(dgCanvas.height-DGH*dgScale)/2;
   if(prev!==DGH&&dgSt==='playing'){
@@ -2338,6 +2375,8 @@ function dgStartRun(){
   dgSt='playing';
   document.getElementById('dgMenu').style.display='none';
   document.getElementById('dgCanvasWrap').classList.add('active');
+  {const rt=document.getElementById('dgRotate');           // portrait-only nudge, fades itself out
+   if(rt){rt.classList.remove('gone');clearTimeout(dgRotT);dgRotT=setTimeout(()=>rt.classList.add('gone'),4200)}}
   document.body.classList.add('dg-fullscreen');
   dgResize();dgNextFloor();dgLastTs=performance.now();dgRAF=requestAnimationFrame(dgLoop);
 }
