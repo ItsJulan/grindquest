@@ -911,7 +911,7 @@ function migrate(d){
 }
 function load(){try{const r=localStorage.getItem(SK);if(r)return migrate({...defaults(),...JSON.parse(r)})}catch(e){}return defaults()}
 function save(){localStorage.setItem(SK,JSON.stringify(D))}
-let D=load(),activeFilter='all',shopCat='all';
+let D=load(),activeFilter='active',shopCat='all';
 function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
 function ymd(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 // ── SERVER CLOCK ──
