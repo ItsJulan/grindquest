@@ -7,6 +7,52 @@
   @media(prefers-color-scheme:light){:root{--bg-deep:#eae6df;--bg-panel:#f5f2ec;--bg-card:#fff;--bg-card-hover:#f0ede6;--bg-input:#e8e4dc;--border:#d0c9be;--border-glow:#c4bca8;--text:#3a3428;--text-dim:#8a8274;--text-bright:#1a1610;--gold:#c07a00;--gold-dim:#e8c882;--gold-glow:rgba(192,122,0,.08);--xp-bar:#c07a00;--xp-bar-bg:#efe0c0;--green:#16a34a;--green-dim:#bbf7d0;--green-glow:rgba(22,163,74,.06);--cyan:#0891b2;--cyan-dim:#cffafe;--purple:#7c3aed;--purple-dim:#ddd6fe;--red:#dc2626;--red-dim:#fecaca;--panel-shadow:0 2px 12px rgba(0,0,0,.08);--crit-color:#dc2626;--crit-glow:rgba(220,38,38,.2)}}
   :root[data-theme="light"]{--bg-deep:#eae6df;--bg-panel:#f5f2ec;--bg-card:#fff;--bg-card-hover:#f0ede6;--bg-input:#e8e4dc;--border:#d0c9be;--border-glow:#c4bca8;--text:#3a3428;--text-dim:#8a8274;--text-bright:#1a1610;--gold:#c07a00;--gold-dim:#e8c882;--gold-glow:rgba(192,122,0,.08);--xp-bar:#c07a00;--xp-bar-bg:#efe0c0;--green:#16a34a;--green-dim:#bbf7d0;--green-glow:rgba(22,163,74,.06);--cyan:#0891b2;--cyan-dim:#cffafe;--purple:#7c3aed;--purple-dim:#ddd6fe;--red:#dc2626;--red-dim:#fecaca;--panel-shadow:0 2px 12px rgba(0,0,0,.08);--crit-color:#dc2626;--crit-glow:rgba(220,38,38,.2)}
   :root[data-theme="dark"]{--bg-deep:#0b1118;--bg-panel:#131b27;--bg-card:#1a2536;--bg-card-hover:#1f2d42;--bg-input:#0e1620;--border:#253245;--border-glow:#2a3f5a;--text:#d4cfc8;--text-dim:#7a8696;--text-bright:#f0ece6;--gold:#f5a623;--gold-dim:#b07a15;--gold-glow:rgba(245,166,35,.15);--xp-bar:#f5a623;--xp-bar-bg:#2a2010;--green:#4ade80;--green-dim:#166534;--green-glow:rgba(74,222,128,.12);--cyan:#22d3ee;--cyan-dim:#0e4f5a;--purple:#a78bfa;--purple-dim:#3b2d6b;--red:#f87171;--red-dim:#5a1a1a;--panel-shadow:0 2px 12px rgba(0,0,0,.4);--crit-color:#ff4444;--crit-glow:rgba(255,68,68,.4)}
+  /* ── planner ── */
+  .cal-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+  .cal-title{flex:1;font-size:14px;font-weight:700;color:var(--text-bright);letter-spacing:.4px}
+  .cal-nav{width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card);
+    color:var(--text);font-size:16px;line-height:1;cursor:pointer;font-family:inherit;transition:.15s}
+  .cal-nav:hover{background:var(--bg-card-hover);border-color:var(--border-glow)}
+  .cal-dow{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px;margin-bottom:3px}
+  .cal-dow span{text-align:center;font-size:9px;font-weight:700;color:var(--text-dim);letter-spacing:.6px}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}
+  .cal-cell{position:relative;aspect-ratio:1;min-height:38px;border-radius:8px;border:1px solid var(--border);
+    background:var(--bg-card);cursor:pointer;padding:3px 2px 2px;display:flex;flex-direction:column;
+    align-items:center;justify-content:flex-start;gap:2px;font-family:inherit;transition:.12s}
+  .cal-cell:hover{background:var(--bg-card-hover)}
+  .cal-cell .cd{font-size:11px;font-weight:600;color:var(--text);font-variant-numeric:tabular-nums;line-height:1}
+  .cal-cell.other{opacity:.32}
+  .cal-cell.today{border-color:var(--gold);background:var(--gold-glow)}
+  .cal-cell.today .cd{color:var(--gold);font-weight:800}
+  .cal-cell.sel{outline:2px solid var(--cyan);outline-offset:-2px}
+  .cal-cell.hasover{border-color:var(--red)}
+  .cal-dots{display:flex;flex-wrap:wrap;gap:2px;justify-content:center;align-items:center;line-height:0}
+  .cal-dot{width:5px;height:5px;border-radius:50%;display:block}
+  .cal-dot.done{opacity:.3}
+  .cal-more{font-size:8px;color:var(--text-dim);font-weight:700}
+  .due-tag{font-size:9px;font-weight:700;padding:1px 5px;border-radius:5px;letter-spacing:.2px;white-space:nowrap}
+  .due-over{background:var(--red-dim);color:var(--red)}
+  .due-today{background:var(--gold-glow);color:var(--gold)}
+  .due-soon{background:var(--cyan-dim);color:var(--cyan)}
+  .due-far{background:var(--bg-input);color:var(--text-dim)}
+  .ag-sec{font-size:10px;font-weight:700;color:var(--text-dim);letter-spacing:.8px;text-transform:uppercase;margin:10px 0 6px}
+  .ag-sec:first-child{margin-top:0}
+  .ag-item{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:9px;background:var(--bg-card);
+    border:1px solid var(--border);margin-bottom:5px}
+  .ag-item.done{opacity:.5}
+  .ag-item.over{border-color:var(--red-dim)}
+  .ag-chk{width:24px;height:24px;flex-shrink:0;border-radius:7px;border:2px solid var(--border-glow);
+    background:transparent;cursor:pointer;color:var(--green);font-size:13px;line-height:1;font-family:inherit;transition:.15s}
+  .ag-chk:hover:not(:disabled){border-color:var(--green);background:var(--green-glow)}
+  .ag-chk:disabled{cursor:default;border-color:transparent;color:var(--green)}
+  .ag-body{flex:1;min-width:0}
+  .ag-name{font-size:12.5px;font-weight:600;color:var(--text-bright);word-break:break-word}
+  .ag-item.done .ag-name{text-decoration:line-through}
+  .ag-meta{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-top:3px;font-size:10px;color:var(--text-dim)}
+  .ag-rew{font-size:10px;color:var(--gold);text-align:right;flex-shrink:0;line-height:1.35}
+  .ag-empty{text-align:center;color:var(--text-dim);font-size:12px;padding:18px 8px}
+  .cal-legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:9px;font-size:9px;color:var(--text-dim)}
+  .cal-legend i{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:3px;vertical-align:middle}
   *{margin:0;padding:0;box-sizing:border-box}
   body{font-family:-apple-system,'Segoe UI',system-ui,sans-serif;background:var(--bg-deep);color:var(--text);min-height:100vh;overflow-x:hidden}
   .gm{font-family:'Cascadia Mono','Consolas',monospace}.tn{font-variant-numeric:tabular-nums}
@@ -225,6 +271,9 @@
     .nav{padding:0 12px;overflow:visible}
     .add-form{grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto}
     .add-form>#qName{grid-column:1/-1}
+    .add-form>#qDue{grid-column:1/-1}
+    .cal-top{grid-template-columns:1fr}
+    .cal-cell{min-height:34px}
     .input,.sel{min-width:0;max-width:100%}
     .qdel{opacity:1}
     .qi{gap:8px;padding:10px}
@@ -437,9 +486,10 @@
   .dg-fullscreen .nav,.dg-fullscreen .topbar{display:none}
   .dg-fullscreen #page-dungeon{height:100vh;display:flex;flex-direction:column}
   @media(orientation:landscape) and (max-height:500px){
-    .dg-joystick{bottom:calc(10px + env(safe-area-inset-bottom,0px));left:calc(6px + env(safe-area-inset-left,0px));width:88px;height:88px}
-    .dg-dash-btn{bottom:calc(92px + env(safe-area-inset-bottom,0px));right:calc(6px + env(safe-area-inset-right,0px));width:62px;height:62px;font-size:11px}
-    .dg-blink-btn{bottom:calc(18px + env(safe-area-inset-bottom,0px));right:calc(8px + env(safe-area-inset-right,0px));width:58px;height:58px;font-size:10px}
+    .dg-joystick{bottom:calc(24px + env(safe-area-inset-bottom,0px));left:calc(28px + env(safe-area-inset-left,0px));width:104px;height:104px}
+    .dg-joy-knob{width:48px;height:48px}
+    .dg-dash-btn{bottom:calc(116px + env(safe-area-inset-bottom,0px));right:calc(28px + env(safe-area-inset-right,0px));width:72px;height:72px;font-size:12px}
+    .dg-blink-btn{bottom:calc(32px + env(safe-area-inset-bottom,0px));right:calc(112px + env(safe-area-inset-right,0px));width:64px;height:64px;font-size:11px}
     .dg-pu-card{width:112px;padding:9px}
     .dg-death-card{padding:14px 20px}
     .dg-pu-cards{gap:8px}
@@ -460,14 +510,14 @@
   @media(orientation:portrait) and (max-width:560px){
     .dg-canvas-wrap.active .dg-rotate{display:block}
   }
-  @media(max-width:480px){.dg-pu-card{width:130px;padding:12px}.dg-death-card{padding:20px}.dg-upgrades{grid-template-columns:1fr 1fr}.dg-dash-btn{bottom:104px;right:18px;width:70px;height:70px}.dg-blink-btn{bottom:26px;right:92px;width:62px;height:62px;font-size:11px}.dg-joystick{bottom:40px;left:40px;width:100px;height:100px}}
+  @media(max-width:480px){.dg-pu-card{width:130px;padding:12px}.dg-death-card{padding:20px}.dg-upgrades{grid-template-columns:1fr 1fr}.dg-dash-btn{bottom:calc(132px + env(safe-area-inset-bottom,0px));right:calc(32px + env(safe-area-inset-right,0px));width:80px;height:80px}.dg-blink-btn{bottom:calc(40px + env(safe-area-inset-bottom,0px));right:calc(124px + env(safe-area-inset-right,0px));width:70px;height:70px;font-size:11px}.dg-joystick{bottom:calc(62px + env(safe-area-inset-bottom,0px));left:calc(44px + env(safe-area-inset-left,0px));width:116px;height:116px}.dg-joy-knob{width:50px;height:50px}}
   @media(max-width:359px){.sc i{display:none}}
   @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 </style>
 
 <div class="nav">
   <div class="nav-brand">GrindQuest</div>
-  <button class="nav-tab active" data-page="quests">Quests</button>
+  <button class="nav-tab active" data-page="quests">Plan</button>
   <button class="nav-tab" data-page="mini">Mini</button>
   <button class="nav-tab" data-page="challenges">Challenges</button>
   <button class="nav-tab" data-page="skills">Skills</button>
@@ -495,9 +545,24 @@
 </div>
 
 <div class="page active" id="page-quests">
+  <div class="g2 cal-top"><div>
+    <div class="panel">
+      <div class="cal-head">
+        <button class="cal-nav" id="calPrev" aria-label="Previous month">&lsaquo;</button>
+        <div class="cal-title" id="calTitle"></div>
+        <button class="btn btn-sm" id="calToday">Today</button>
+        <button class="cal-nav" id="calNext" aria-label="Next month">&rsaquo;</button>
+      </div>
+      <div class="cal-dow"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div>
+      <div class="cal-grid" id="calGrid"></div>
+      <div class="cal-legend" id="calLegend"></div>
+    </div>
+  </div><div>
+    <div class="panel"><div class="pt" id="agTitle">Today <span class="line"></span></div><div id="agList"></div></div>
+  </div></div>
   <div class="g2"><div>
     <div class="panel"><div class="pt">New Quest <span class="line"></span></div>
-      <div class="add-form"><input class="input" id="qName" placeholder="Assignment name..."/><select class="input sel" id="qSub"></select><select class="input sel" id="qDiff"><option value="easy">Easy</option><option value="medium" selected>Medium</option><option value="hard">Hard</option><option value="legendary">Legendary</option></select><button class="btn btn-g" id="addBtn">+Add</button></div>
+      <div class="add-form"><input class="input" id="qName" placeholder="Assignment name..."/><select class="input sel" id="qSub"></select><input class="input" id="qDue" type="date" title="Due date (optional)"/><select class="input sel" id="qDiff"><option value="easy">Easy</option><option value="medium" selected>Medium</option><option value="hard">Hard</option><option value="legendary">Legendary</option></select><button class="btn btn-g" id="addBtn">+Add</button></div>
     </div>
     <div class="panel"><div class="pt">Quests <span class="line"></span></div><div class="frow" id="fRow"></div><div class="quest-list" id="qList"></div></div>
     <div class="panel"><div class="pt">Log <span class="line"></span></div><div class="log-list" id="logList"></div></div>
@@ -606,7 +671,7 @@
     </div>
   </div>
 </div>
-<nav class="bottom-nav" id="bottomNav" aria-label="Main navigation"><button class="nav-tab active" data-page="quests"><span class="ni">📋</span>Quests</button><button class="nav-tab" data-page="mini"><span class="ni">✨</span>Mini</button><button class="nav-tab" data-page="challenges"><span class="ni">🎯</span>Goals</button><button class="nav-tab" data-page="skills"><span class="ni">📊</span>Skills</button><button class="nav-tab" data-page="shop"><span class="ni">🛒</span>Shop</button><button class="nav-tab" data-page="profile"><span class="ni">👤</span>You</button><button class="nav-tab" data-page="dungeon"><span class="ni">⚔️</span>Dungeon</button></nav>
+<nav class="bottom-nav" id="bottomNav" aria-label="Main navigation"><button class="nav-tab active" data-page="quests"><span class="ni">📅</span>Plan</button><button class="nav-tab" data-page="mini"><span class="ni">✨</span>Mini</button><button class="nav-tab" data-page="challenges"><span class="ni">🎯</span>Goals</button><button class="nav-tab" data-page="skills"><span class="ni">📊</span>Skills</button><button class="nav-tab" data-page="shop"><span class="ni">🛒</span>Shop</button><button class="nav-tab" data-page="profile"><span class="ni">👤</span>You</button><button class="nav-tab" data-page="dungeon"><span class="ni">⚔️</span>Dungeon</button></nav>
 <div class="sync-modal" id="syncModal">
   <div class="sync-card">
     <h3>Cloud Sync</h3>
@@ -644,8 +709,12 @@ reforgeBad(){o(400,'sawtooth',.1,0,.15);o(300,'sawtooth',.08,.1,.2)}}})();
 // ═══ CONSTANTS ═══
 const SK='grindquest_v4';
 const DXP={easy:50,medium:120,hard:250,legendary:500},DCN={easy:10,medium:25,hard:60,legendary:150};
-const SUBS=[{name:'AHIS 1',icon:'🏛️',pri:true},{name:'N1 Research',icon:'🔬',pri:true,hourly:true},{name:'Content Creation',icon:'🎬'},{name:'SB Attack',icon:'⚔️',hourly:true},{name:'Future Class Review',icon:'📋',hourly:true},{name:'Fitness',icon:'💪'}];
-const SCOLS=['#22d3ee','#a78bfa','#fb7185','#4ade80','#f5a623','#f97316'];
+const SUBS=[{name:'Math',icon:'📐',pri:true},{name:'Chemistry',icon:'🧪',pri:true},{name:'Gen Ed',icon:'🏛️',pri:true},{name:'N1 Research',icon:'🔬',pri:true,hourly:true},{name:'Content Creation',icon:'🎬'},{name:'SB Attack',icon:'⚔️',hourly:true},{name:'Future Class Review',icon:'📋',hourly:true},{name:'Fitness',icon:'💪'},{name:'Life',icon:'🏠',life:true}];
+// Life quests are errands, not coursework: they pay on the mini-quest scale and
+// grant no dungeon energy, so the dungeon still has to be earned with real work.
+const LIFE_XP={easy:20,medium:35,hard:60,legendary:110},LIFE_CN={easy:3,medium:5,hard:9,legendary:16};
+function isLifeSub(n){const s=SUBS.find(x=>x.name===n);return !!(s&&s.life)}
+const SCOLS=['#22d3ee','#a78bfa','#fb7185','#4ade80','#f5a623','#f97316','#38bdf8','#f472b6','#94a3b8'];
 const TITLES=['Freshman','Student','Scholar','Apprentice','Journeyman','Adept','Expert','Master','Grandmaster','Sage','Archmage','Legend','Mythic','Transcendent','Eternal','Ascended','Immortal','Deity','Cosmic','MAXED'];
 const MAX_P=5,P_COIN=.15,P_SKILL=.1,P_LVL=30,SKL_COIN=.05,PRI_B=1.25;
 const REFORGES=[{name:'Gentle',mult:.85,css:'rf-bad',ch:15},{name:'Odd',mult:.9,css:'rf-bad',ch:15},{name:'Fair',mult:1,css:'rf-neutral',ch:25},{name:'Sharp',mult:1.15,css:'rf-good',ch:20},{name:'Heroic',mult:1.3,css:'rf-great',ch:13},{name:'Legendary',mult:1.45,css:'rf-legendary',ch:8},{name:'Mythic',mult:1.65,css:'rf-mythic',ch:4}];
@@ -681,6 +750,8 @@ const MINI_QUESTS=[
   {id:'mq_skincare',name:'Skincare Routine',icon:'🧴',xp:15,coins:3},
   {id:'mq_teeth',name:'Floss',icon:'🦷',xp:10,coins:2},
   {id:'mq_nophone',name:'1hr No Phone',icon:'📵',xp:35,coins:7},
+  {id:'mq_math',name:'Math Practice',icon:'📐',xp:45,coins:8,subj:'Math'},
+  {id:'mq_chem',name:'Chemistry Practice',icon:'🧪',xp:45,coins:8,subj:'Chemistry'},
 ];
 const BP_XP_PER={easy:10,medium:25,hard:50,legendary:100};
 function bpXpFor(t){return 50+t*8}
@@ -823,7 +894,21 @@ function xpFor(l){return Math.floor(100*Math.pow(1.18,l-1))}
 function sklXp(l){return Math.floor(60*Math.pow(1.15,l-1))}
 function curSeason(){const d=new Date(),q=Math.floor(d.getMonth()/3)+1;return`${d.getFullYear()}-Q${q}`}
 function defaults(){return{xp:0,level:1,totalXp:0,coins:0,streak:0,lastActive:null,totalDone:0,totalCrits:0,prestige:0,quests:[],skills:{},log:[],achieved:[],streakDays:[],dailies:null,dailyDate:null,weeklies:null,weeklyStart:null,dailyDone:[],weeklyDone:[],weeklySubjects:[],badges:[],lootboxes:0,lootTickets:0,inventory:[],owned:[],equipped:{theme:null,xpbar:null,border:null,titlecolor:null,crit:null,customtitle:null,aura:false,flex:false},permCB:0,permXB:0,extraCrit:0,hasDoubler:false,pcs:0,talismans:[],minionTier:0,minionLastCollect:null,minionSeason:null,bpXp:0,bpClaimed:[],bpSeason:null,miniDone:[],miniDate:null,energy:0,freeRunDay:null,relics:[],relicEquipped:null,relicWeekSeen:null,dg:{upgHp:0,upgDmg:0,upgSpd:0,upgCrit:0,upgArmor:0,weapons:['rusty'],selectedWeapon:'rusty',bestFloor:0,totalRuns:0,totalKills:0}}}
-function load(){try{const r=localStorage.getItem(SK);if(r)return{...defaults(),...JSON.parse(r)}}catch(e){}return defaults()}
+function migrate(d){
+  const REN={'AHIS 1':'Gen Ed'};
+  if(Array.isArray(d.quests))for(const q of d.quests)if(REN[q.subject])q.subject=REN[q.subject];
+  if(d.skills)for(const [from,to] of Object.entries(REN)){
+    if(!d.skills[from])continue;
+    if(d.skills[to]){                                   // merge rather than clobber
+      d.skills[to].xp=(d.skills[to].xp||0)+(d.skills[from].xp||0);
+      d.skills[to].level=Math.max(d.skills[to].level||1,d.skills[from].level||1);
+    }else d.skills[to]=d.skills[from];
+    delete d.skills[from];
+  }
+  if(Array.isArray(d.weeklySubjects))d.weeklySubjects=d.weeklySubjects.map(x=>REN[x]||x);
+  return d;
+}
+function load(){try{const r=localStorage.getItem(SK);if(r)return migrate({...defaults(),...JSON.parse(r)})}catch(e){}return defaults()}
 function save(){localStorage.setItem(SK,JSON.stringify(D))}
 let D=load(),activeFilter='all',shopCat='all';
 function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
@@ -920,22 +1005,25 @@ function completeQuest(id,el){
   q.completed=true;q.completedAt=new Date().toISOString();D.totalDone++;updateStreak();
   const isCrit=Math.random()<critCh();if(isCrit)D.totalCrits++;
   const sub=SUBS.find(s=>s.name===q.subject),pm=sub?.pri?PRI_B:1,sm=sMult(),cm=isCrit?2.5:1;
-  const rfm=q.reforgeMult||1;const baseXp=DXP[q.difficulty];
+  const rfm=q.reforgeMult||1,isLife=!!(sub&&sub.life);
+  const baseXp=(isLife?LIFE_XP:DXP)[q.difficulty];
   const totalXp=Math.floor(baseXp*sm*cm*pm*rfm);
-  let totalCoins=Math.floor(DCN[q.difficulty]*sm*cm*coinB(q.subject)*rfm)+talBoosts().flat;
+  let totalCoins=isLife?Math.floor(LIFE_CN[q.difficulty]*sm*cm*rfm)
+                       :Math.floor(DCN[q.difficulty]*sm*cm*coinB(q.subject)*rfm)+talBoosts().flat;
   if(D.hasDoubler){if(Math.random()<.5)totalCoins*=2;else if(Math.random()<.1)totalCoins=0}
   if(isCrit){showCritEffect(el);SFX.crit();addLog(`CRIT! ${q.name}`,totalXp,true)}else{SFX.complete();addLog(`Done: ${q.name}`,totalXp)}
   showXpPopup(totalXp,el,isCrit);grantXp(totalXp);D.coins+=totalCoins;grantSkillXp(q.subject,baseXp);
   D.bpXp+=(BP_XP_PER[q.difficulty]||10);
-  const eg=dgGrantEnergy(q.difficulty);
+  const eg=isLife?0:dgGrantEnergy(q.difficulty);
   if(eg>0)addLog('+'+eg+' energy',0);
   updateCh(q);checkMiles();save();render();
 }
 function deleteQuest(id){D.quests=D.quests.filter(q=>q.id!==id);save();render()}
 function addQuest(){const ne=document.getElementById('qName'),n=ne.value.trim();if(!n){ne.focus();return}const subName=document.getElementById('qSub').value,sub=SUBS.find(s=>s.name===subName),isHourly=sub?.hourly||false;
-  const q={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),name:n,subject:subName,difficulty:document.getElementById('qDiff').value,completed:false,createdAt:new Date().toISOString()};
+  const dueEl=document.getElementById('qDue'),due=dueEl&&dueEl.value?dueEl.value:null;
+  const q={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),name:n,subject:subName,difficulty:document.getElementById('qDiff').value,completed:false,createdAt:new Date().toISOString(),due};
   if(isHourly){q.hourly=true;q.hours=0}
-  D.quests.push(q);addLog(`New: ${n}`);save();ne.value='';render();ne.focus()}
+  D.quests.push(q);addLog(`New: ${n}`);save();ne.value='';if(dueEl)dueEl.value='';render();ne.focus()}
 function logHours(id,hrs){
   const q=D.quests.find(x=>x.id===id);if(!q||!q.hourly)return;
   q.hours=(q.hours||0)+hrs;updateStreak();
@@ -1028,6 +1116,7 @@ function miniDay(){const n=new Date();if(n.getHours()<6)n.setDate(n.getDate()-1)
 function checkMiniReset(){const t=miniDay();if(D.miniDate!==t){D.miniDone=[];D.miniDate=t;if(typeof _origSave==='function')_origSave();else save()}}
 function completeMini(id){checkMiniReset();if(D.miniDone.includes(id))return;const mq=MINI_QUESTS.find(x=>x.id===id);if(!mq)return;
   D.miniDone.push(id);updateStreak();
+  if(mq.subj)grantSkillXp(mq.subj,mq.xp);
   const sm=sMult(),xp=Math.floor(mq.xp*sm),coins=Math.floor(mq.coins*sm*coinB(''));
   grantXp(xp);D.coins+=coins;D.bpXp+=5;
   addLog(`Mini: ${mq.name}`,xp);SFX.complete();
@@ -1062,6 +1151,130 @@ function renderSubDD(){const s=document.getElementById('qSub'),c=s.value;s.inner
 function renderFilters(){const r=document.getElementById('fRow'),sbs=[...new Set(D.quests.filter(q=>!q.completed).map(q=>q.subject).filter(Boolean))];
   r.innerHTML=['all','active','completed'].map(f=>`<button class="fb ${activeFilter===f?'active':''}" data-f="${f}">${f}</button>`).join('')+sbs.map(s=>{const sub=SUBS.find(x=>x.name===s);return`<button class="fb ${activeFilter===s?'active':''}" data-f="${s}">${sub?.icon||''} ${s}</button>`}).join('');
   r.querySelectorAll('.fb').forEach(b=>b.addEventListener('click',()=>{activeFilter=b.dataset.f;render()}))}
+// due dates are stored as plain local YYYY-MM-DD, same basis as tdy()
+function dueDelta(due){
+  if(!due)return null;
+  const t=tdy();
+  const a=new Date(t+'T00:00:00'),b=new Date(due+'T00:00:00');
+  return Math.round((b-a)/864e5);
+}
+function dueLabel(due){
+  const d=dueDelta(due);
+  if(d===null)return '';
+  if(d<-1)return Math.abs(d)+'d overdue';
+  if(d===-1)return 'Yesterday';
+  if(d===0)return 'Today';
+  if(d===1)return 'Tomorrow';
+  if(d<7)return 'in '+d+'d';
+  return new Date(due+'T00:00:00').toLocaleDateString([],{month:'short',day:'numeric'});
+}
+function dueClass(due){
+  const d=dueDelta(due);
+  if(d===null)return '';
+  return d<0?'due-over':d===0?'due-today':d<=2?'due-soon':'due-far';
+}
+function dueBadge(q){
+  if(!q.due||q.completed)return '';
+  return '<span class="due-tag '+dueClass(q.due)+'">📅 '+dueLabel(q.due)+'</span>';
+}
+// ─── PLANNER ───
+let calMonth=null,calSel=null;
+function calInit(){
+  if(!calSel)calSel=tdy();
+  if(!calMonth){const n=new Date();calMonth={y:n.getFullYear(),m:n.getMonth()}}
+}
+function subColor(name){const i=SUBS.findIndex(x=>x.name===name);return SCOLS[(i<0?0:i)%SCOLS.length]}
+function questsDue(day){return D.quests.filter(q=>q.due===day)}
+function calShift(delta){
+  calInit();
+  const d=new Date(calMonth.y,calMonth.m+delta,1);
+  calMonth={y:d.getFullYear(),m:d.getMonth()};
+  renderCal();
+}
+function calPick(day){calSel=day;renderCal();renderAgenda()}
+function renderCal(){
+  calInit();
+  const grid=document.getElementById('calGrid');if(!grid)return;
+  const {y,m}=calMonth,today=tdy();
+  document.getElementById('calTitle').textContent=
+    new Date(y,m,1).toLocaleDateString([],{month:'long',year:'numeric'});
+  const first=new Date(y,m,1), startDow=first.getDay();
+  const cells=[];
+  for(let i=0;i<42;i++){
+    const d=new Date(y,m,1-startDow+i);
+    const ds=ymd(d), inMonth=d.getMonth()===m;
+    const qs=questsDue(ds);
+    const openOverdue=qs.some(q=>!q.completed)&&ds<today;
+    const dots=qs.slice(0,4).map(q=>
+      '<i class="cal-dot'+(q.completed?' done':'')+'" style="background:'+subColor(q.subject)+'"></i>').join('');
+    cells.push('<button class="cal-cell'+(inMonth?'':' other')+(ds===today?' today':'')+
+      (ds===calSel?' sel':'')+(openOverdue?' hasover':'')+'" data-day="'+ds+'">'+
+      '<span class="cd">'+d.getDate()+'</span>'+
+      '<span class="cal-dots">'+dots+(qs.length>4?'<span class="cal-more">+'+(qs.length-4)+'</span>':'')+'</span>'+
+      '</button>');
+  }
+  grid.innerHTML=cells.join('');
+  grid.querySelectorAll('.cal-cell').forEach(b=>b.addEventListener('click',()=>calPick(b.dataset.day)));
+  // only show subjects that actually appear this month
+  const seen=[...new Set(D.quests.filter(q=>q.due&&q.due.slice(0,7)===y+'-'+String(m+1).padStart(2,'0')).map(q=>q.subject))];
+  document.getElementById('calLegend').innerHTML=seen.length
+    ? seen.map(n=>'<span><i style="background:'+subColor(n)+'"></i>'+esc(n)+'</span>').join('')
+    : '<span>No due dates this month yet — add one with the date field below.</span>';
+}
+function agQuestRow(q){
+  const sub=SUBS.find(x=>x.name===q.subject),isLife=!!(sub&&sub.life),sm=sMult(),rfm=q.reforgeMult||1;
+  const pm=sub&&sub.pri?PRI_B:1;
+  const xp=Math.floor((isLife?LIFE_XP:DXP)[q.difficulty]*sm*pm*rfm);
+  const cn=isLife?Math.floor(LIFE_CN[q.difficulty]*sm*rfm)
+                 :Math.floor(DCN[q.difficulty]*sm*coinB(q.subject)*rfm)+talBoosts().flat;
+  const over=!q.completed&&q.due&&dueDelta(q.due)<0;
+  return '<div class="ag-item'+(q.completed?' done':'')+(over?' over':'')+'">'+
+    '<button class="ag-chk" data-id="'+q.id+'"'+(q.completed?' disabled':'')+'>'+(q.completed?'✔':'')+'</button>'+
+    '<div class="ag-body"><div class="ag-name">'+esc(q.name)+'</div>'+
+    '<div class="ag-meta"><span>'+((sub&&sub.icon)||'')+' '+esc(q.subject||'')+'</span>'+
+    '<span class="dt dt-'+q.difficulty+'">'+q.difficulty+'</span>'+dueBadge(q)+'</div></div>'+
+    (q.completed?'':'<div class="ag-rew gm tn">+'+xp+' XP<br>+'+cn+' ★</div>')+'</div>';
+}
+function agMiniRow(mq){
+  const done=(D.miniDone||[]).includes(mq.id),sm=sMult();
+  const xp=Math.floor(mq.xp*sm),cn=Math.floor(mq.coins*sm*coinB(''));
+  return '<div class="ag-item'+(done?' done':'')+'">'+
+    '<button class="ag-chk" data-mini="'+mq.id+'"'+(done?' disabled':'')+'>'+(done?'✔':'')+'</button>'+
+    '<div class="ag-body"><div class="ag-name">'+mq.icon+' '+esc(mq.name)+'</div>'+
+    '<div class="ag-meta"><span>daily</span>'+(mq.subj?'<span>'+esc(mq.subj)+'</span>':'')+'</div></div>'+
+    (done?'':'<div class="ag-rew gm tn">+'+xp+' XP<br>+'+cn+' ★</div>')+'</div>';
+}
+function renderAgenda(){
+  calInit();
+  const el=document.getElementById('agList');if(!el)return;
+  const today=tdy(),isToday=calSel===today;
+  const d=new Date(calSel+'T00:00:00');
+  document.getElementById('agTitle').innerHTML=
+    (isToday?'Today':d.toLocaleDateString([],{weekday:'long',month:'short',day:'numeric'}))+
+    ' <span class="line"></span>';
+  let h='';
+  if(isToday){
+    const overdue=D.quests.filter(q=>!q.completed&&q.due&&dueDelta(q.due)<0)
+      .sort((a,b)=>a.due<b.due?-1:1);
+    if(overdue.length)h+='<div class="ag-sec" style="color:var(--red)">Overdue · '+overdue.length+'</div>'+
+      overdue.map(agQuestRow).join('');
+  }
+  const due=questsDue(calSel).sort((a,b)=>(a.completed?1:0)-(b.completed?1:0));
+  if(due.length)h+='<div class="ag-sec">Due '+(isToday?'today':'this day')+' · '+due.length+'</div>'+due.map(agQuestRow).join('');
+  if(isToday){
+    checkMiniReset();
+    const cls=MINI_QUESTS.filter(m=>m.subj);
+    if(cls.length)h+='<div class="ag-sec">Class practice</div>'+cls.map(agMiniRow).join('');
+    const restLeft=MINI_QUESTS.filter(m=>!m.subj&&!(D.miniDone||[]).includes(m.id)).length;
+    if(restLeft)h+='<div class="ag-meta" style="margin-top:8px">'+restLeft+' other mini quests left — see the Mini tab.</div>';
+  }
+  if(!h)h='<div class="ag-empty">Nothing scheduled.<br><span style="font-size:11px">Add a quest below with a due date.</span></div>';
+  el.innerHTML=h;
+  el.querySelectorAll('.ag-chk[data-id]:not([disabled])').forEach(b=>
+    b.addEventListener('click',()=>completeQuest(b.dataset.id,b)));
+  el.querySelectorAll('.ag-chk[data-mini]:not([disabled])').forEach(b=>
+    b.addEventListener('click',()=>completeMini(b.dataset.mini)));
+}
 function renderQuests(){const el=document.getElementById('qList');let qs=[...D.quests].reverse();
   if(activeFilter==='active')qs=qs.filter(q=>!q.completed);else if(activeFilter==='completed')qs=qs.filter(q=>q.completed);else if(activeFilter!=='all')qs=qs.filter(q=>q.subject===activeFilter);
   if(!qs.length){el.innerHTML='<div class="quest-empty"><span style="font-size:28px;display:block;margin-bottom:6px">⚔️</span>No quests.</div>';return}
@@ -1069,8 +1282,11 @@ function renderQuests(){const el=document.getElementById('qList');let qs=[...D.q
     const rfCost=RF_COST[q.difficulty];
     if(q.hourly){const xpH=Math.floor(DXP.medium*sm*pm*rfm),cnH=Math.floor(DCN.medium*sm*coinB(q.subject)*rfm)+talBoosts().flat;
       return`<div class="qi" data-id="${q.id}"><div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex-shrink:0"><button class="btn btn-sm btn-g qhr" data-id="${q.id}" data-hrs="1" style="font-size:11px;padding:5px 8px">+1h</button><button class="btn btn-sm btn-p qhr" data-id="${q.id}" data-hrs="0.5" style="font-size:9px;padding:3px 6px">+30m</button></div><div class="qbody"><div class="qname">${esc(q.name)} <span class="gm tn" style="color:var(--cyan);font-size:11px">${q.hours||0}h logged</span></div><div class="qmeta">${q.subject?`<span>${sub?.icon||''} ${q.subject}</span>`:''}<span class="dt dt-medium">hourly</span>${sub?.pri?'<span class="ptag">Priority</span>':''}${q.reforge?`<span class="reforge-tag ${q.reforgeCss}">${q.reforge} ${q.reforgeMult>=1?'+':''}${Math.round((q.reforgeMult-1)*100)}%</span>`:''}</div></div><div class="qrew gm tn" style="font-size:10px">+${xpH} XP/h<br>+${cnH} ★/h</div>${!q.reforge?`<button class="qreforge" data-id="${q.id}" ${D.coins<rfCost?'disabled':''}title="${rfCost} coins">⚒️</button>`:''}<button class="qdel" data-id="${q.id}">&times;</button></div>`}
-    const xp=Math.floor(DXP[q.difficulty]*sm*pm*rfm),cn=Math.floor(DCN[q.difficulty]*sm*coinB(q.subject)*rfm)+talBoosts().flat;
-    return`<div class="qi ${q.completed?'done':''}" data-id="${q.id}"><button class="qchk" data-id="${q.id}" ${q.completed?'disabled':''}>${q.completed?'✔':''}</button><div class="qbody"><div class="qname">${esc(q.name)}</div><div class="qmeta">${q.subject?`<span>${sub?.icon||''} ${q.subject}</span>`:''}<span class="dt dt-${q.difficulty}">${q.difficulty}</span>${sub?.pri?'<span class="ptag">Priority</span>':''}${q.reforge?`<span class="reforge-tag ${q.reforgeCss}">${q.reforge} ${q.reforgeMult>=1?'+':''}${Math.round((q.reforgeMult-1)*100)}%</span>`:''}</div></div>${q.completed?'':`<div class="qrew gm tn">+${xp} XP<br>+${cn} ★</div>`}${!q.completed&&!q.reforge?`<button class="qreforge" data-id="${q.id}" ${D.coins<rfCost?'disabled':''}title="${rfCost} coins">⚒️</button>`:''}<button class="qdel" data-id="${q.id}">&times;</button></div>`}).join('');
+    const isLife=!!(sub&&sub.life);
+    const xp=Math.floor((isLife?LIFE_XP:DXP)[q.difficulty]*sm*pm*rfm);
+    const cn=isLife?Math.floor(LIFE_CN[q.difficulty]*sm*rfm)
+                   :Math.floor(DCN[q.difficulty]*sm*coinB(q.subject)*rfm)+talBoosts().flat;
+    return`<div class="qi ${q.completed?'done':''}" data-id="${q.id}"><button class="qchk" data-id="${q.id}" ${q.completed?'disabled':''}>${q.completed?'✔':''}</button><div class="qbody"><div class="qname">${esc(q.name)}</div><div class="qmeta">${q.subject?`<span>${sub?.icon||''} ${q.subject}</span>`:''}<span class="dt dt-${q.difficulty}">${q.difficulty}</span>${dueBadge(q)}${sub?.pri?'<span class="ptag">Priority</span>':''}${q.reforge?`<span class="reforge-tag ${q.reforgeCss}">${q.reforge} ${q.reforgeMult>=1?'+':''}${Math.round((q.reforgeMult-1)*100)}%</span>`:''}</div></div>${q.completed?'':`<div class="qrew gm tn">+${xp} XP<br>+${cn} ★</div>`}${!q.completed&&!q.reforge&&!isLife?`<button class="qreforge" data-id="${q.id}" ${D.coins<rfCost?'disabled':''}title="${rfCost} coins">⚒️</button>`:''}<button class="qdel" data-id="${q.id}">&times;</button></div>`}).join('');
   el.querySelectorAll('.qchk:not([disabled])').forEach(b=>b.addEventListener('click',()=>completeQuest(b.dataset.id,b)));
   el.querySelectorAll('.qhr').forEach(b=>b.addEventListener('click',()=>logHours(b.dataset.id,parseFloat(b.dataset.hrs))));
   el.querySelectorAll('.qdel').forEach(b=>b.addEventListener('click',()=>deleteQuest(b.dataset.id)));
@@ -1130,7 +1346,7 @@ function renderPrestige(){document.getElementById('pSec').innerHTML=`<h3 style="
 function renderLog(){const el=document.getElementById('logList');if(!D.log.length){el.innerHTML='<div style="text-align:center;color:var(--text-dim);padding:12px;font-size:12px">No activity</div>';return}
   el.innerHTML=D.log.slice(0,30).map(l=>`<div class="le"><span class="lt gm">${l.time}</span><span class="lm ${l.crit?'lc':''}">${esc(l.msg)}</span>${l.xp?`<span class="lx gm">+${l.xp}</span>`:''}</div>`).join('')}
 function renderStreak(){const g=document.getElementById('sGrid'),t=new Date(),ts=tdy();let h='';for(let i=27;i>=0;i--){const d=new Date(t);d.setDate(d.getDate()-i);const ds=ymd(d);h+=`<div class="sd ${D.streakDays.includes(ds)?'active':''} ${ds===ts?'today':''}">${d.getDate()}</div>`}g.innerHTML=h}
-function render(){renderTop();renderSubDD();renderFilters();renderQuests();renderMini();renderSkills('qSk',true);renderSkills('fSk',false);renderChallenges();renderBP();renderMinion();renderTalismans();renderShop();renderProfile();renderPrestige();renderLog();renderStreak()}
+function render(){renderTop();renderSubDD();renderFilters();renderCal();renderAgenda();renderQuests();renderMini();renderSkills('qSk',true);renderSkills('fSk',false);renderChallenges();renderBP();renderMinion();renderTalismans();renderShop();renderProfile();renderPrestige();renderLog();renderStreak()}
 
 function goPage(name){
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.toggle('active',t.dataset.page===name));
@@ -1139,6 +1355,10 @@ function goPage(name){
   window.scrollTo(0,0);
 }
 document.querySelectorAll('.nav-tab').forEach(tab=>tab.addEventListener('click',()=>goPage(tab.dataset.page)));
+document.getElementById('calPrev').addEventListener('click',()=>calShift(-1));
+document.getElementById('calNext').addEventListener('click',()=>calShift(1));
+document.getElementById('calToday').addEventListener('click',()=>{
+  const n=new Date();calMonth={y:n.getFullYear(),m:n.getMonth()};calSel=tdy();renderCal();renderAgenda()});
 document.getElementById('addBtn').addEventListener('click',addQuest);document.getElementById('qName').addEventListener('keydown',e=>{if(e.key==='Enter')addQuest()});
 document.getElementById('prestigeBtn').addEventListener('click',doPrestige);
 
@@ -1253,6 +1473,9 @@ const DG_ENERGY_BY_DIFF={easy:1,medium:1,hard:2,legendary:3};
 //     x3 per boss tier; tuned so a perfect week (35 paid runs, all reaching
 //     the Titan) sits just under 50%.
 const DG_RELIC_ODDS=[0.00015,0.00045,0.00135,0.0040,0.0120];
+// Duplicate-relic payout by boss tier. Sized against the weapon ladder (top weapon
+// 6000) and the 50/day dungeon cap: a rare, memorable windfall, not an income stream.
+const DG_DUPE_COINS=[400,700,1200,2000,3500];
 const DG_RELIC_EPOCH=Date.UTC(2026,0,5);          // a Monday — keeps devices in sync
 const DG_RELICS=[
  {id:'echo',  name:'Echo Prism',  icon:'🔷',
@@ -1852,7 +2075,7 @@ let dgFreeRun=false,dgRelicDrop=null,dgRelicDropT=0,dgTrail=[],dgFlames=[],dgMin
 let dgClearT=0,dgHurtT=0;const dgHurtMax=.45;
 let dgObs=[],dgHitstop=0,dgShakeX=0,dgShakeY=0,dgGhosts=[],dgDashQueued=false;
 let dgDashBtn=null,dgDashRdy=true,dgTouchUI=false,dgBlinkRdy=true;
-let dgAlert=null,dgRotT=null;
+let dgAlert=null,dgRotT=null,dgJoyR=50;
 const DG_DASH_SPD=640,DG_DASH_TIME=.22,DG_DASH_CD=.95,DG_DASH_IFR=.2;
 
 function dgInit(){
@@ -1867,8 +2090,8 @@ function dgInit(){
     if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright',' ','shift'].includes(k))e.preventDefault()}});
   window.addEventListener('keyup',e=>{const k=e.key.toLowerCase();dgKeys[k]=false;if(k==='q')dgBlink.held=false});
   const joy=document.getElementById('dgJoystick');
-  joy.addEventListener('touchstart',e=>{e.preventDefault();const t=e.touches[0];dgTouchId=t.identifier;const r=joy.getBoundingClientRect();dgTouchStart={x:r.left+r.width/2,y:r.top+r.height/2}},{passive:false});
-  joy.addEventListener('touchmove',e=>{e.preventDefault();for(const t of e.touches){if(t.identifier===dgTouchId){const dx=t.clientX-dgTouchStart.x,dy=t.clientY-dgTouchStart.y,mag=Math.hypot(dx,dy);dgTouchDir=mag>5?{x:dx/mag,y:dy/mag}:{x:0,y:0};const knob=document.getElementById('dgJoyKnob'),r=Math.min(mag,50);knob.style.transform=`translate(calc(-50% + ${dgTouchDir.x*r}px),calc(-50% + ${dgTouchDir.y*r}px))`;break}}},{passive:false});
+  joy.addEventListener('touchstart',e=>{e.preventDefault();const t=e.touches[0];dgTouchId=t.identifier;const r=joy.getBoundingClientRect();dgJoyR=r.width/2;dgTouchStart={x:r.left+r.width/2,y:r.top+r.height/2}},{passive:false});
+  joy.addEventListener('touchmove',e=>{e.preventDefault();for(const t of e.touches){if(t.identifier===dgTouchId){const dx=t.clientX-dgTouchStart.x,dy=t.clientY-dgTouchStart.y,mag=Math.hypot(dx,dy);dgTouchDir=mag>5?{x:dx/mag,y:dy/mag}:{x:0,y:0};const knob=document.getElementById('dgJoyKnob'),r=Math.min(mag,dgJoyR*.6);knob.style.transform=`translate(calc(-50% + ${dgTouchDir.x*r}px),calc(-50% + ${dgTouchDir.y*r}px))`;break}}},{passive:false});
   joy.addEventListener('touchend',e=>{for(const t of e.changedTouches){if(t.identifier===dgTouchId){dgTouchId=null;dgTouchDir={x:0,y:0};document.getElementById('dgJoyKnob').style.transform='translate(-50%,-50%)';break}}},{passive:false});
   const bbtn=document.getElementById('dgBlinkBtn');
   const setHeld=v=>{if(dgSt==='playing')dgBlink.held=v};
@@ -2486,12 +2709,13 @@ function dgUpdate(dt){
     const a=Math.min(1,dgRelicDropT/.6),cx=dgOx+DGW/2*sc,cy=dgOy+(DGH*.42)*sc;
     ctx.save();ctx.globalAlpha=a;
     ctx.font='bold '+Math.floor(13*sc)+'px sans-serif';ctx.textAlign='center';
-    ctx.fillStyle='#fde68a';ctx.fillText('RELIC RECOVERED',cx,cy-26*sc);
-    ctx.font=Math.floor(40*sc)+'px sans-serif';ctx.fillText(dgRelicDrop.icon,cx,cy+14*sc);
+    const dup=!!dgRelicDrop.dupe;
+    ctx.fillStyle='#fde68a';ctx.fillText(dup?'DUPLICATE RELIC':'RELIC RECOVERED',cx,cy-26*sc);
+    ctx.font=Math.floor(40*sc)+'px sans-serif';ctx.fillText(dup?'💰':dgRelicDrop.icon,cx,cy+14*sc);
     ctx.font='bold '+Math.floor(20*sc)+'px sans-serif';ctx.fillStyle='#fbbf24';
-    ctx.fillText(dgRelicDrop.name,cx,cy+42*sc);
+    ctx.fillText(dup?'+'+dgRelicDrop.coins+' COINS':dgRelicDrop.name,cx,cy+42*sc);
     ctx.font=Math.floor(10*sc)+'px sans-serif';ctx.fillStyle='#e8e0d0';
-    ctx.fillText(dgRelicDrop.desc,cx,cy+58*sc);
+    ctx.fillText(dup?'You already hold the '+dgRelicDrop.name:dgRelicDrop.desc,cx,cy+58*sc);
     ctx.restore();ctx.globalAlpha=1;
   }
   if(dgAlert){dgAlert.life-=dt;if(dgAlert.life<=0)dgAlert=null}
@@ -3484,10 +3708,21 @@ function dgRollRelic(e){
   const idx=DG_BOSS.findIndex(b=>b.id===e.id);
   if(idx<0)return;
   const relic=dgRelicOfWeek();
-  if(!relic||dgRelicOwned(relic.id))return;
+  if(!relic)return;
   D.dg=D.dg||{};
   D.dg.bossKills=(D.dg.bossKills||0)+1;      // tracked so a pity floor can be added later
   if(Math.random()>=DG_RELIC_ODDS[idx])return;
+  // Already own this week's relic? The roll still lands — it just pays in coins.
+  // Deliberately exempt from DG_DAILY_CAP: at these odds it fires a couple of times
+  // a month at most, and the whole point is that it feels like a jackpot.
+  if(dgRelicOwned(relic.id)){
+    const payout=DG_DUPE_COINS[idx];
+    D.coins+=payout;
+    dgRelicDrop={dupe:true,coins:payout,name:relic.name,icon:relic.icon};dgRelicDropT=5.5;
+    addLog('Duplicate '+relic.name+' → +'+payout+' coins',0);
+    dgFlash=1;dgFlashCol='rgba(245,166,35,';dgShakeAdd(9,Math.random()-.5,Math.random()-.5);
+    save();return;
+  }
   if(!Array.isArray(D.relics))D.relics=[];
   D.relics.push(relic.id);
   if(!D.relicEquipped)D.relicEquipped=relic.id;
@@ -4191,15 +4426,19 @@ function updateSyncUI(){
 }
 function showSyncStatus(msg,type){const el=document.getElementById('syncStatus');el.textContent=msg;el.className='sync-status '+type;setTimeout(()=>el.className='sync-status',4000)}
 
+let cloudInFlight=false,cloudDirty=false;
 async function cloudSave(){
   if(!fbReady||!syncCode||syncPaused)return;
+  if(cloudInFlight){cloudDirty=true;return}      // coalesce instead of dropping
+  cloudInFlight=true;
   try{
-    syncPaused=true;
     const ref=firebase.database().ref('saves/'+syncCode);
-    const payload={...D};
-    await ref.set(payload);
-    syncPaused=false;
-  }catch(e){syncPaused=false;console.warn('Cloud save failed:',e)}
+    await ref.set({...D});
+  }catch(e){cloudDirty=true;console.warn('Cloud save failed:',e)}
+  finally{
+    cloudInFlight=false;
+    if(cloudDirty){cloudDirty=false;setTimeout(cloudSave,0)}
+  }
 }
 async function cloudPull(){
   if(!fbReady||!syncCode)return null;
@@ -4242,9 +4481,29 @@ function startLiveSync(){
 }
 function stopLiveSync(){if(syncRef){syncRef.off();syncRef=null}}
 
+// ── day-rollover watchdog ──
+let _seenDay=null;
+function dayWatch(){
+  const t=tdy();
+  checkMiniReset();genD();genW();
+  if(_seenDay!==null&&_seenDay!==t){
+    if(typeof calSel!=='undefined'&&calSel===_seenDay)calSel=t;   // keep "Today" selected
+    _origSave();render();
+  }
+  _seenDay=t;
+}
+// (started below, once _origSave exists)
+
 // Override save to also push to cloud
 const _origSave=save;
 save=function(){D._lastSync=Date.now();_origSave();cloudSave()};
+
+// safe to arm now that _origSave is initialised
+dayWatch();
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)dayWatch()});
+window.addEventListener('focus',dayWatch);
+window.addEventListener('pageshow',dayWatch);      // bfcache restore on mobile
+setInterval(dayWatch,60000);
 
 // Sync modal events
 document.getElementById('syncBtn').addEventListener('click',()=>{document.getElementById('syncModal').classList.add('show');updateSyncUI()});
