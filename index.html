@@ -54,7 +54,12 @@
   .cal-legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:9px;font-size:9px;color:var(--text-dim)}
   .cal-legend i{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:3px;vertical-align:middle}
   *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:-apple-system,'Segoe UI',system-ui,sans-serif;background:var(--bg-deep);color:var(--text);min-height:100vh;overflow-x:hidden}
+  /* overflow-x:hidden on body makes iOS Safari treat the body as a scroll container,
+     which drags position:fixed children (the bottom nav) along with the scroll.
+     overflow-x:clip clips identically WITHOUT creating that container. hidden stays
+     first as the fallback for browsers that don't know clip. Same idea for dvh: 100vh
+     on iOS is the URL-bar-hidden height, so the page is taller than what you can see. */
+  body{font-family:-apple-system,'Segoe UI',system-ui,sans-serif;background:var(--bg-deep);color:var(--text);min-height:100vh;min-height:100dvh;overflow-x:hidden;overflow-x:clip}
   .gm{font-family:'Cascadia Mono','Consolas',monospace}.tn{font-variant-numeric:tabular-nums}
   .nav{background:var(--bg-panel);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:2px;padding:0 16px;box-shadow:var(--panel-shadow);position:sticky;top:0;z-index:200;overflow-x:auto}
   .nav-brand{font-weight:900;font-size:15px;color:var(--gold);letter-spacing:1.5px;text-transform:uppercase;margin-right:12px;padding:12px 0;white-space:nowrap}
