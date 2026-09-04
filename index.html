@@ -1540,13 +1540,14 @@ const DG_ENM=[
 {id:'sentry',hp:135,dmg:20,spd:0,  sz:16,coins:3,unlockAt:20,atk:'laser',ranged:true}
 ];
 const DG_BOSS=[
-{id:'kingslime',  name:'King Slime',   hp:185, dmg:10,spd:40,sz:32,coins:5, ai:'slime'},
-{id:'deathknight',name:'Death Knight', hp:420, dmg:18,spd:55,sz:26,coins:8, ai:'knight'},
-{id:'dragon',     name:'Dragon',       hp:640, dmg:22,spd:35,sz:36,coins:12,ai:'dragon'},
-{id:'lich',       name:'The Lich',     hp:1000,dmg:26,spd:30,sz:28,coins:16,ai:'lich'},
-{id:'titan',      name:'Void Titan',   hp:3400,dmg:46,spd:38,sz:42,coins:22,ai:'titan'}
+{id:'kingslime',  name:'King Slime',   hp:185, dmg:10,spd:40,sz:32,coins:2, ai:'slime'},
+{id:'deathknight',name:'Death Knight', hp:420, dmg:18,spd:55,sz:26,coins:3, ai:'knight'},
+{id:'dragon',     name:'Dragon',       hp:640, dmg:22,spd:35,sz:36,coins:5, ai:'dragon'},
+{id:'lich',       name:'The Lich',     hp:1000,dmg:26,spd:30,sz:28,coins:13,ai:'lich'},
+{id:'titan',      name:'Void Titan',   hp:3400,dmg:46,spd:38,sz:42,coins:27,ai:'titan'}
 ];
 const DG_DAILY_CAP=50;
+const DG_BASE_HP=85;          // was 100 — Vitality has to carry more of the survivability
 // ═══ ENERGY: dungeon runs are paid for with real assignments ═══
 const DG_ENERGY_MAX=5;
 const DG_ENERGY_BY_DIFF={easy:1,medium:1,hard:2,legendary:3};
@@ -1716,7 +1717,7 @@ function dgBreakBarrel(o){
   for(let i=0;i<14;i++){const a=Math.random()*Math.PI*2,s=60+Math.random()*140;
     dgPart.push({x:o.x,y:o.y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-60,life:.4+Math.random()*.4,ml:.8,color:['#8b5a2b','#a06c37','#6b4423'][Math.floor(Math.random()*3)],size:1.5+Math.random()*2.5})}
   const rl=Math.random();
-  if(rl<.55)dgDrops.push({x:o.x,y:o.y,type:'coin',val:1});
+  if(rl<.55&&false)dgDrops.push({x:o.x,y:o.y,type:'coin',val:1});   // boss-only economy
   else if(rl<.63)dgDrops.push({x:o.x,y:o.y,type:'hp',val:0});
 }
 function dgHitBarrels(x,y,rad){for(const o of dgObs){if(o.t!=='barrel'||o.hp<=0)continue;if(Math.hypot(o.x-x,o.y-y)<rad+o.r)dgBreakBarrel(o)}}
@@ -2670,7 +2671,7 @@ function dgStartRun(){
   }
   save();
   const dd=D.dg||{},wpn=DG_WPN.find(w=>w.id===(dd.selectedWeapon||'rusty'))||DG_WPN[0],buff=dgTaskBuff();
-  dgP={x:DGW/2,y:DGH-60,hp:100+(dd.upgHp||0)*15,maxHp:100+(dd.upgHp||0)*15,
+  dgP={x:DGW/2,y:DGH-60,hp:DG_BASE_HP+(dd.upgHp||0)*15,maxHp:DG_BASE_HP+(dd.upgHp||0)*15,
     dmg:(wpn.dmg+(dd.upgDmg||0)*2)*(1+buff*.05),baseDmg:wpn.dmg+(dd.upgDmg||0)*2,
     speed:150*(1+(dd.upgSpd||0)*.08)*(wpn.spdB||1),crit:.05+(dd.upgCrit||0)*.04,armor:(dd.upgArmor||0)*2,
     weapon:wpn,atkTimer:0,invTimer:0,powers:[],shieldCd:0,shieldReady:true,facing:{x:0,y:1},auraTimer:0,
@@ -3849,7 +3850,14 @@ function dgKillEnemy(e){
   dgPart.push({x:e.x,y:e.y,vx:0,vy:0,life:.22,ml:.22,color:col,size:e.sz*1.8,type:'ring'});
   dgHitstop=Math.max(dgHitstop,e.boss?.14:.045);
   dgSpawnPart(e.x,e.y,6,col);
-  const cv=e.coins||1;for(let i=0;i<Math.min(cv,5);i++){dgDrops.push({x:e.x+(Math.random()-.5)*30,y:e.y+(Math.random()-.5)*30,type:'coin',val:Math.ceil(cv/Math.min(cv,5))})}
+  // Only bosses pay. Clearing rooms is the cost of reaching them, not the income.
+  if(e.boss){
+    // Split into at most 5 pickups that sum EXACTLY to the payout. Math.ceil here
+    // overpaid on anything not divisible by 5 (Titan 27 -> 30, Lich 13 -> 15).
+    const cv=e.coins||1,n=Math.min(cv,5),base=Math.floor(cv/n),rem=cv%n;
+    for(let i=0;i<n;i++)dgDrops.push({x:e.x+(Math.random()-.5)*30,y:e.y+(Math.random()-.5)*30,
+      type:'coin',val:base+(i<rem?1:0)});
+  }
   if(Math.random()<.042)dgDrops.push({x:e.x,y:e.y,type:'hp',val:0});
   // Bombers detonate on death — punishes killing them at melee range
   if(e.split&&!e.isSplit&&e.sz>9){
