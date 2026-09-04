@@ -51,6 +51,14 @@
   .ag-meta{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-top:3px;font-size:10px;color:var(--text-dim)}
   .ag-rew{font-size:10px;color:var(--gold);text-align:right;flex-shrink:0;line-height:1.35}
   .ag-empty{text-align:center;color:var(--text-dim);font-size:12px;padding:18px 8px}
+  .todo-empty{text-align:center;color:var(--text-dim);font-size:12px;padding:16px 8px}
+  .todo-date{background:var(--bg-input);border:1px solid var(--border);color:var(--text-dim);
+    border-radius:7px;font-family:inherit;font-size:10px;padding:8px 6px;cursor:pointer;flex-shrink:0;
+    width:40px;min-height:34px;transition:.15s}
+  .todo-date:hover{border-color:var(--gold);color:var(--gold)}
+  .todo-date::-webkit-calendar-picker-indicator{opacity:.65;cursor:pointer;margin:0}
+  .todo-date::-webkit-datetime-edit,.todo-date::-webkit-inner-spin-field{display:none}
+  .pt .cnt{background:var(--bg-input);color:var(--text-dim);border-radius:10px;padding:1px 7px;font-size:10px;letter-spacing:0}
   .cal-legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:9px;font-size:9px;color:var(--text-dim)}
   .cal-legend i{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:3px;vertical-align:middle}
   *{margin:0;padding:0;box-sizing:border-box}
@@ -569,6 +577,7 @@
     <div class="panel"><div class="pt">New Quest <span class="line"></span></div>
       <div class="add-form"><input class="input" id="qName" placeholder="Assignment name..."/><select class="input sel" id="qSub"></select><input class="input" id="qDue" type="date" title="Due date (optional)"/><select class="input sel" id="qDiff"><option value="easy">Easy</option><option value="medium" selected>Medium</option><option value="hard">Hard</option><option value="legendary">Legendary</option></select><button class="btn btn-g" id="addBtn">+Add</button></div>
     </div>
+    <div class="panel"><div class="pt">To Do <span class="cnt" id="todoCount">0</span><span class="line"></span><span style="font-size:10px;color:var(--text-dim);letter-spacing:0;text-transform:none">unscheduled</span></div><div class="quest-list" id="todoList"></div></div>
     <div class="panel"><div class="pt">Quests <span class="line"></span></div><div class="frow" id="fRow"></div><div class="quest-list" id="qList"></div></div>
     <div class="panel"><div class="pt">Log <span class="line"></span></div><div class="log-list" id="logList"></div></div>
   </div><div>
@@ -1305,8 +1314,51 @@ function renderAgenda(){
   el.querySelectorAll('.ag-chk[data-mini]:not([disabled])').forEach(b=>
     b.addEventListener('click',()=>completeMini(b.dataset.mini)));
 }
+// Anything without a due date is unscheduled work — it lives here rather than in the
+// dated list, so the two views never show the same quest twice.
+function scheduleQuest(id,due){
+  const q=D.quests.find(x=>x.id===id);if(!q)return;
+  q.due=due||null;
+  if(due){addLog(`Scheduled: ${q.name}`);calSel=due;
+    const d=new Date(due+'T00:00:00');calMonth={y:d.getFullYear(),m:d.getMonth()}}
+  save();render();
+}
+function renderTodo(){
+  const el=document.getElementById('todoList');if(!el)return;
+  const qs=D.quests.filter(q=>!q.completed&&!q.due).reverse();
+  const cnt=document.getElementById('todoCount');
+  if(cnt)cnt.textContent=qs.length;
+  if(!qs.length){
+    el.innerHTML='<div class="todo-empty">Nothing unscheduled.<br><span style="font-size:11px">Quests added without a due date land here.</span></div>';
+    return;
+  }
+  const sm=sMult(),flat=talBoosts().flat;
+  el.innerHTML=qs.map(q=>{
+    const sub=SUBS.find(x=>x.name===q.subject),isLife=!!(sub&&sub.life);
+    const pm=sub&&sub.pri?PRI_B:1,rfm=q.reforgeMult||1;
+    const diff=q.hourly?'medium':q.difficulty;
+    const xp=Math.floor((isLife?LIFE_XP:DXP)[diff]*sm*pm*rfm);
+    const cn=isLife?Math.floor(LIFE_CN[diff]*sm*rfm):Math.floor(DCN[diff]*sm*coinB(q.subject)*rfm)+flat;
+    const meta='<div class="qmeta">'+(q.subject?`<span>${(sub&&sub.icon)||''} ${esc(q.subject)}</span>`:'')+
+      `<span class="dt dt-${diff}">${q.hourly?'hourly':q.difficulty}</span>`+
+      (sub&&sub.pri?'<span class="ptag">Priority</span>':'')+
+      (q.reforge?`<span class="reforge-tag ${q.reforgeCss}">${q.reforge} ${q.reforgeMult>=1?'+':''}${Math.round((q.reforgeMult-1)*100)}%</span>`:'')+'</div>';
+    const lead=q.hourly
+      ? `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex-shrink:0"><button class="btn btn-sm btn-g thr" data-id="${q.id}" data-hrs="1" style="font-size:11px;padding:5px 8px">+1h</button><button class="btn btn-sm btn-p thr" data-id="${q.id}" data-hrs="0.5" style="font-size:9px;padding:3px 6px">+30m</button></div>`
+      : `<button class="qchk tchk" data-id="${q.id}"></button>`;
+    const name=`<div class="qname">${esc(q.name)}${q.hourly?` <span class="gm tn" style="color:var(--cyan);font-size:11px">${q.hours||0}h logged</span>`:''}</div>`;
+    return `<div class="qi" data-id="${q.id}">${lead}<div class="qbody">${name}${meta}</div>`+
+      `<div class="qrew gm tn" style="font-size:10px">+${xp} XP${q.hourly?'/h':''}<br>+${cn} ★${q.hourly?'/h':''}</div>`+
+      `<input type="date" class="todo-date tdate" data-id="${q.id}" title="Give it a due date">`+
+      `<button class="qdel tdel" data-id="${q.id}">&times;</button></div>`;
+  }).join('');
+  el.querySelectorAll('.tchk').forEach(b=>b.addEventListener('click',()=>completeQuest(b.dataset.id,b)));
+  el.querySelectorAll('.thr').forEach(b=>b.addEventListener('click',()=>logHours(b.dataset.id,parseFloat(b.dataset.hrs))));
+  el.querySelectorAll('.tdel').forEach(b=>b.addEventListener('click',()=>deleteQuest(b.dataset.id)));
+  el.querySelectorAll('.tdate').forEach(i=>i.addEventListener('change',()=>scheduleQuest(i.dataset.id,i.value)));
+}
 function renderQuests(){const el=document.getElementById('qList');let qs=[...D.quests].reverse();
-  if(activeFilter==='active')qs=qs.filter(q=>!q.completed);else if(activeFilter==='completed')qs=qs.filter(q=>q.completed);else if(activeFilter!=='all')qs=qs.filter(q=>q.subject===activeFilter);
+  if(activeFilter==='active')qs=qs.filter(q=>!q.completed&&q.due);   // unscheduled live in the To Do boardelse if(activeFilter==='completed')qs=qs.filter(q=>q.completed);else if(activeFilter!=='all')qs=qs.filter(q=>q.subject===activeFilter);
   if(!qs.length){el.innerHTML='<div class="quest-empty"><span style="font-size:28px;display:block;margin-bottom:6px">⚔️</span>No quests.</div>';return}
   el.innerHTML=qs.map(q=>{const sub=SUBS.find(s=>s.name===q.subject),pm=sub?.pri?PRI_B:1,sm=sMult(),rfm=q.reforgeMult||1;
     const rfCost=RF_COST[q.difficulty];
@@ -1376,7 +1428,7 @@ function renderPrestige(){document.getElementById('pSec').innerHTML=`<h3 style="
 function renderLog(){const el=document.getElementById('logList');if(!D.log.length){el.innerHTML='<div style="text-align:center;color:var(--text-dim);padding:12px;font-size:12px">No activity</div>';return}
   el.innerHTML=D.log.slice(0,30).map(l=>`<div class="le"><span class="lt gm">${l.time}</span><span class="lm ${l.crit?'lc':''}">${esc(l.msg)}</span>${l.xp?`<span class="lx gm">+${l.xp}</span>`:''}</div>`).join('')}
 function renderStreak(){const g=document.getElementById('sGrid'),t=nowDate(),ts=tdy();let h='';for(let i=27;i>=0;i--){const d=new Date(t);d.setDate(d.getDate()-i);const ds=ymd(d);h+=`<div class="sd ${D.streakDays.includes(ds)?'active':''} ${ds===ts?'today':''}">${d.getDate()}</div>`}g.innerHTML=h}
-function render(){renderTop();renderSubDD();renderFilters();renderCal();renderAgenda();renderQuests();renderMini();renderSkills('qSk',true);renderSkills('fSk',false);renderChallenges();renderBP();renderMinion();renderTalismans();renderShop();renderProfile();renderPrestige();renderLog();renderStreak()}
+function render(){renderTop();renderSubDD();renderFilters();renderCal();renderAgenda();renderTodo();renderQuests();renderMini();renderSkills('qSk',true);renderSkills('fSk',false);renderChallenges();renderBP();renderMinion();renderTalismans();renderShop();renderProfile();renderPrestige();renderLog();renderStreak()}
 
 function goPage(name){
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.toggle('active',t.dataset.page===name));
