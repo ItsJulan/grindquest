@@ -2811,19 +2811,6 @@ function dgUpdate(dt){
     if(d<20){dgCollect(dr);dgDrops.splice(i,1)}}
   if(dgRelicDropT>0)dgRelicDropT=Math.max(0,dgRelicDropT-dt);
   if(dgHurtT>0)dgHurtT=Math.max(0,dgHurtT-dt);
-  if(dgRelicDrop&&dgRelicDropT>0){
-    const a=Math.min(1,dgRelicDropT/.6),cx=dgOx+DGW/2*sc,cy=dgOy+(DGH*.42)*sc;
-    ctx.save();ctx.globalAlpha=a;
-    ctx.font='bold '+Math.floor(13*sc)+'px sans-serif';ctx.textAlign='center';
-    const dup=!!dgRelicDrop.dupe;
-    ctx.fillStyle='#fde68a';ctx.fillText(dup?'DUPLICATE RELIC':'RELIC RECOVERED',cx,cy-26*sc);
-    ctx.font=Math.floor(40*sc)+'px sans-serif';ctx.fillText(dup?'💰':dgRelicDrop.icon,cx,cy+14*sc);
-    ctx.font='bold '+Math.floor(20*sc)+'px sans-serif';ctx.fillStyle='#fbbf24';
-    ctx.fillText(dup?'+'+dgRelicDrop.coins+' COINS':dgRelicDrop.name,cx,cy+42*sc);
-    ctx.font=Math.floor(10*sc)+'px sans-serif';ctx.fillStyle='#e8e0d0';
-    ctx.fillText(dup?'You already hold the '+dgRelicDrop.name:dgRelicDrop.desc,cx,cy+58*sc);
-    ctx.restore();ctx.globalAlpha=1;
-  }
   if(dgAlert){dgAlert.life-=dt;if(dgAlert.life<=0)dgAlert=null}
   if(dgShake>0)dgShake=Math.max(0,dgShake-dt*20);
   if(dgFlash>0)dgFlash=Math.max(0,dgFlash-dt*3);
@@ -4484,6 +4471,22 @@ function dgRender(){
     ctx.fillStyle='#ef4444';ctx.fillText(dgAlert.text,dgOx+DGW/2*sc,ay);
     ctx.globalAlpha=al*.8;ctx.font='bold '+Math.floor(9*sc)+'px sans-serif';ctx.fillStyle='#fca5a5';
     ctx.fillText('YOUR UNFINISHED WORK TOOK FORM',dgOx+DGW/2*sc,ay+14*sc);
+    ctx.restore();ctx.globalAlpha=1;
+  }
+  // Relic banner. This is drawing, so it belongs here — it previously sat in
+  // dgUpdate(), which has no ctx or sc, and threw a ReferenceError every frame a
+  // relic was on screen. That killed the run on the first relic you ever earned.
+  if(dgRelicDrop&&dgRelicDropT>0){
+    const ra=Math.min(1,dgRelicDropT/.6),rcx=dgOx+DGW/2*sc,rcy=dgOy+(DGH*.42)*sc;
+    const dup=!!dgRelicDrop.dupe;
+    ctx.save();ctx.globalAlpha=ra;ctx.textAlign='center';
+    ctx.font='bold '+Math.floor(13*sc)+'px sans-serif';
+    ctx.fillStyle='#fde68a';ctx.fillText(dup?'DUPLICATE RELIC':'RELIC RECOVERED',rcx,rcy-26*sc);
+    ctx.font=Math.floor(40*sc)+'px sans-serif';ctx.fillText(dup?'💰':dgRelicDrop.icon,rcx,rcy+14*sc);
+    ctx.font='bold '+Math.floor(20*sc)+'px sans-serif';ctx.fillStyle='#fbbf24';
+    ctx.fillText(dup?'+'+dgRelicDrop.coins+' COINS':dgRelicDrop.name,rcx,rcy+42*sc);
+    ctx.font=Math.floor(10*sc)+'px sans-serif';ctx.fillStyle='#e8e0d0';
+    ctx.fillText(dup?'You already hold the '+dgRelicDrop.name:(dgRelicDrop.desc||''),rcx,rcy+58*sc);
     ctx.restore();ctx.globalAlpha=1;
   }
   // white = normal hit · gold = crit · crimson = damage YOU took · green = heal
