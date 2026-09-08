@@ -35,6 +35,7 @@
   .due-today{background:var(--gold-glow);color:var(--gold)}
   .due-soon{background:var(--cyan-dim);color:var(--cyan)}
   .due-far{background:var(--bg-input);color:var(--text-dim)}
+  .due-pen{background:var(--red-dim);color:var(--red);font-variant-numeric:tabular-nums}
   .ag-sec{font-size:10px;font-weight:700;color:var(--text-dim);letter-spacing:.8px;text-transform:uppercase;margin:10px 0 6px}
   .ag-sec:first-child{margin-top:0}
   .ag-item{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:9px;background:var(--bg-card);
@@ -765,6 +766,7 @@ const MINI_QUESTS=[
   {id:'mq_skincare',name:'Skincare Routine',icon:'🧴',xp:15,coins:3},
   {id:'mq_teeth',name:'Floss',icon:'🦷',xp:10,coins:2},
   {id:'mq_nophone',name:'1hr No Phone',icon:'📵',xp:35,coins:7},
+  {id:'mq_supp',name:'Take Supplements',icon:'💊',xp:15,coins:3},
   {id:'mq_math',name:'Math Practice',icon:'📐',xp:45,coins:8,subj:'Math'},
   {id:'mq_chem',name:'Chemistry Practice',icon:'🧪',xp:45,coins:8,subj:'Chemistry'},
 ];
@@ -1044,14 +1046,14 @@ function completeQuest(id,el){
   q.completed=true;q.completedAt=new Date().toISOString();D.totalDone++;updateStreak();
   const isCrit=Math.random()<critCh();if(isCrit)D.totalCrits++;
   const sub=SUBS.find(s=>s.name===q.subject),pm=sub?.pri?PRI_B:1,sm=sMult(),cm=isCrit?2.5:1;
-  const rfm=q.reforgeMult||1,isLife=!!(sub&&sub.life);
+  const rfm=q.reforgeMult||1,isLife=!!(sub&&sub.life),lp=latePenalty(q);
   const baseXp=(isLife?LIFE_XP:DXP)[q.difficulty];
-  const totalXp=Math.floor(baseXp*sm*cm*pm*rfm);
-  let totalCoins=isLife?Math.floor(LIFE_CN[q.difficulty]*sm*cm*rfm)
-                       :Math.floor(DCN[q.difficulty]*sm*cm*coinB(q.subject)*rfm)+talBoosts().flat;
+  const totalXp=Math.max(1,Math.floor(baseXp*sm*cm*pm*rfm*lp));
+  let totalCoins=Math.max(0,Math.floor((isLife?Math.floor(LIFE_CN[q.difficulty]*sm*cm*rfm)
+                       :Math.floor(DCN[q.difficulty]*sm*cm*coinB(q.subject)*rfm)+talBoosts().flat)*lp));
   if(D.hasDoubler){if(Math.random()<.5)totalCoins*=2;else if(Math.random()<.1)totalCoins=0}
-  if(isCrit){showCritEffect(el);SFX.crit();addLog(`CRIT! ${q.name}`,totalXp,true)}else{SFX.complete();addLog(`Done: ${q.name}`,totalXp)}
-  showXpPopup(totalXp,el,isCrit);grantXp(totalXp);D.coins+=totalCoins;grantSkillXp(q.subject,baseXp);
+  if(isCrit){showCritEffect(el);SFX.crit();addLog(`CRIT! ${q.name}`,totalXp,true)}else{SFX.complete();addLog(`Done: ${q.name}${lp<1?` (${daysLate(q)}d late, −${Math.round((1-lp)*100)}%)`:''}`,totalXp)}
+  showXpPopup(totalXp,el,isCrit);grantXp(totalXp);D.coins+=totalCoins;grantSkillXp(q.subject,Math.floor(baseXp*lp));
   D.bpXp+=(BP_XP_PER[q.difficulty]||10);
   const eg=isLife?0:dgGrantEnergy(q.difficulty);
   if(eg>0)addLog('+'+eg+' energy',0);
@@ -1212,9 +1214,29 @@ function dueClass(due){
   if(d===null)return '';
   return d<0?'due-over':d===0?'due-today':d<=2?'due-soon':'due-far';
 }
+// Overdue quests pay less on a log curve, so the sting is front-loaded: the first
+// day costs ~14 points of reward, day nine to ten costs about two. Past LATE_DAYS
+// the multiplier is flat, so an old quest stops bleeding and never becomes worthless
+// — the point is to make you finish it, not to make finishing it pointless.
+const LATE_MAX=.50,LATE_DAYS=10;
+function daysLate(q){
+  // Deliberately does NOT skip completed quests: completeQuest() marks the quest done
+  // before it works out the payout, so a completed check here would zero the penalty
+  // at exactly the moment it needs to apply. dueBadge() hides it for finished work.
+  if(!q||!q.due)return 0;
+  const d=dueDelta(q.due);
+  return d===null||d>=0?0:-d;
+}
+function latePenalty(q){
+  const d=daysLate(q);
+  if(d<=0)return 1;
+  return 1-LATE_MAX*Math.min(1,Math.log(1+d)/Math.log(1+LATE_DAYS));
+}
 function dueBadge(q){
   if(!q.due||q.completed)return '';
-  return '<span class="due-tag '+dueClass(q.due)+'">📅 '+dueLabel(q.due)+'</span>';
+  const t='<span class="due-tag '+dueClass(q.due)+'">📅 '+dueLabel(q.due)+'</span>';
+  const lp=latePenalty(q);
+  return lp>=1?t:t+'<span class="due-tag due-pen" title="Overdue reward penalty">−'+Math.round((1-lp)*100)+'%</span>';
 }
 // ─── PLANNER ───
 let calMonth=null,calSel=null;
@@ -1263,9 +1285,10 @@ function renderCal(){
 function agQuestRow(q){
   const sub=SUBS.find(x=>x.name===q.subject),isLife=!!(sub&&sub.life),sm=sMult(),rfm=q.reforgeMult||1;
   const pm=sub&&sub.pri?PRI_B:1;
-  const xp=Math.floor((isLife?LIFE_XP:DXP)[q.difficulty]*sm*pm*rfm);
-  const cn=isLife?Math.floor(LIFE_CN[q.difficulty]*sm*rfm)
-                 :Math.floor(DCN[q.difficulty]*sm*coinB(q.subject)*rfm)+talBoosts().flat;
+  const lp=latePenalty(q);
+  const xp=Math.max(1,Math.floor((isLife?LIFE_XP:DXP)[q.difficulty]*sm*pm*rfm*lp));
+  const cn=Math.max(0,Math.floor((isLife?Math.floor(LIFE_CN[q.difficulty]*sm*rfm)
+                 :Math.floor(DCN[q.difficulty]*sm*coinB(q.subject)*rfm)+talBoosts().flat)*lp));
   const over=!q.completed&&q.due&&dueDelta(q.due)<0;
   return '<div class="ag-item'+(q.completed?' done':'')+(over?' over':'')+'">'+
     '<button class="ag-chk" data-id="'+q.id+'"'+(q.completed?' disabled':'')+'>'+(q.completed?'✔':'')+'</button>'+
@@ -1364,10 +1387,10 @@ function renderQuests(){const el=document.getElementById('qList');let qs=[...D.q
     const rfCost=RF_COST[q.difficulty];
     if(q.hourly){const xpH=Math.floor(DXP.medium*sm*pm*rfm),cnH=Math.floor(DCN.medium*sm*coinB(q.subject)*rfm)+talBoosts().flat;
       return`<div class="qi" data-id="${q.id}"><div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex-shrink:0"><button class="btn btn-sm btn-g qhr" data-id="${q.id}" data-hrs="1" style="font-size:11px;padding:5px 8px">+1h</button><button class="btn btn-sm btn-p qhr" data-id="${q.id}" data-hrs="0.5" style="font-size:9px;padding:3px 6px">+30m</button></div><div class="qbody"><div class="qname">${esc(q.name)} <span class="gm tn" style="color:var(--cyan);font-size:11px">${q.hours||0}h logged</span></div><div class="qmeta">${q.subject?`<span>${sub?.icon||''} ${q.subject}</span>`:''}<span class="dt dt-medium">hourly</span>${sub?.pri?'<span class="ptag">Priority</span>':''}${q.reforge?`<span class="reforge-tag ${q.reforgeCss}">${q.reforge} ${q.reforgeMult>=1?'+':''}${Math.round((q.reforgeMult-1)*100)}%</span>`:''}</div></div><div class="qrew gm tn" style="font-size:10px">+${xpH} XP/h<br>+${cnH} ★/h</div>${!q.reforge?`<button class="qreforge" data-id="${q.id}" ${D.coins<rfCost?'disabled':''}title="${rfCost} coins">⚒️</button>`:''}<button class="qdel" data-id="${q.id}">&times;</button></div>`}
-    const isLife=!!(sub&&sub.life);
-    const xp=Math.floor((isLife?LIFE_XP:DXP)[q.difficulty]*sm*pm*rfm);
-    const cn=isLife?Math.floor(LIFE_CN[q.difficulty]*sm*rfm)
-                   :Math.floor(DCN[q.difficulty]*sm*coinB(q.subject)*rfm)+talBoosts().flat;
+    const isLife=!!(sub&&sub.life),lp=latePenalty(q);
+    const xp=Math.max(1,Math.floor((isLife?LIFE_XP:DXP)[q.difficulty]*sm*pm*rfm*lp));
+    const cn=Math.max(0,Math.floor((isLife?Math.floor(LIFE_CN[q.difficulty]*sm*rfm)
+                   :Math.floor(DCN[q.difficulty]*sm*coinB(q.subject)*rfm)+talBoosts().flat)*lp));
     return`<div class="qi ${q.completed?'done':''}" data-id="${q.id}"><button class="qchk" data-id="${q.id}" ${q.completed?'disabled':''}>${q.completed?'✔':''}</button><div class="qbody"><div class="qname">${esc(q.name)}</div><div class="qmeta">${q.subject?`<span>${sub?.icon||''} ${q.subject}</span>`:''}<span class="dt dt-${q.difficulty}">${q.difficulty}</span>${dueBadge(q)}${sub?.pri?'<span class="ptag">Priority</span>':''}${q.reforge?`<span class="reforge-tag ${q.reforgeCss}">${q.reforge} ${q.reforgeMult>=1?'+':''}${Math.round((q.reforgeMult-1)*100)}%</span>`:''}</div></div>${q.completed?'':`<div class="qrew gm tn">+${xp} XP<br>+${cn} ★</div>`}${!q.completed&&!q.reforge&&!isLife?`<button class="qreforge" data-id="${q.id}" ${D.coins<rfCost?'disabled':''}title="${rfCost} coins">⚒️</button>`:''}<button class="qdel" data-id="${q.id}">&times;</button></div>`}).join('');
   el.querySelectorAll('.qchk:not([disabled])').forEach(b=>b.addEventListener('click',()=>completeQuest(b.dataset.id,b)));
   el.querySelectorAll('.qhr').forEach(b=>b.addEventListener('click',()=>logHours(b.dataset.id,parseFloat(b.dataset.hrs))));
