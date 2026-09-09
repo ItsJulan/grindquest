@@ -2248,7 +2248,10 @@ function dgCollect(dr){
     dgSpawnPart(dr.x,dr.y,6,'#4ade80');
     dgNums.push({x:dr.x,y:dr.y-6,text:'+'+heal,crit:false,life:.7,ml:.7,alpha:1,color:'#4ade80'})}
 }
+const DG_MINI_RATE=.02,DG_MINI_CAP=.30;
 function dgTaskBuff(){return D.miniDone?D.miniDone.length:0}
+function dgTaskDmgMult(){return 1+Math.min(DG_MINI_CAP,dgTaskBuff()*DG_MINI_RATE)}
+function dgTaskBuffPct(){return Math.round((dgTaskDmgMult()-1)*100)}
 // old saves stored the starter weapon as 'sword'
 function dgMigrate(){
   if(!D.dg)D.dg={};
@@ -2262,7 +2265,8 @@ function dgMigrate(){
 function dgRenderMenu(){
   const dd=D.dg||{},tb=dgTaskBuff();
   document.getElementById('dgTaskCount').textContent=tb;
-  document.getElementById('dgDmgBuff').textContent='+'+tb*5+'%';
+  const pct=dgTaskBuffPct(),capped=pct>=Math.round(DG_MINI_CAP*100);
+  document.getElementById('dgDmgBuff').textContent='+'+pct+'%'+(capped?' (max)':'');
   const qb=document.getElementById('dgQuestBoard');
   const aq=D.quests.filter(q=>!q.completed).slice(0,6),ml=MINI_QUESTS.filter(m=>!D.miniDone.includes(m.id));
   qb.innerHTML='<div style="font-size:11px;font-weight:700;color:var(--text-bright);margin-bottom:4px">Active Quests ('+aq.length+')</div>'+
@@ -2693,9 +2697,9 @@ function dgStartRun(){
     return;
   }
   save();
-  const dd=D.dg||{},wpn=DG_WPN.find(w=>w.id===(dd.selectedWeapon||'rusty'))||DG_WPN[0],buff=dgTaskBuff();
+  const dd=D.dg||{},wpn=DG_WPN.find(w=>w.id===(dd.selectedWeapon||'rusty'))||DG_WPN[0];
   dgP={x:DGW/2,y:DGH-60,hp:DG_BASE_HP+(dd.upgHp||0)*15,maxHp:DG_BASE_HP+(dd.upgHp||0)*15,
-    dmg:(wpn.dmg+(dd.upgDmg||0)*2)*(1+buff*.05),baseDmg:wpn.dmg+(dd.upgDmg||0)*2,
+    dmg:(wpn.dmg+(dd.upgDmg||0)*2)*dgTaskDmgMult(),baseDmg:wpn.dmg+(dd.upgDmg||0)*2,
     speed:150*(1+(dd.upgSpd||0)*.08)*(wpn.spdB||1),crit:.05+(dd.upgCrit||0)*.04,armor:(dd.upgArmor||0)*2,
     weapon:wpn,atkTimer:0,invTimer:0,powers:[],shieldCd:0,shieldReady:true,facing:{x:0,y:1},auraTimer:0,
     dashT:0,dashCd:0,dashDir:{x:0,y:1},dashHits:[],moving:0,
