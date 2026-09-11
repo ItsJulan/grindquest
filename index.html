@@ -910,7 +910,7 @@ const LOOT_SUM=LOOT_T.reduce((s,l)=>s+l.w,0);
 function xpFor(l){return Math.floor(100*Math.pow(1.18,l-1))}
 function sklXp(l){return Math.floor(60*Math.pow(1.15,l-1))}
 function curSeason(){const d=nowDate(),q=Math.floor(d.getMonth()/3)+1;return`${d.getFullYear()}-Q${q}`}
-function defaults(){return{xp:0,level:1,totalXp:0,coins:0,streak:0,lastActive:null,totalDone:0,totalCrits:0,prestige:0,quests:[],skills:{},log:[],achieved:[],streakDays:[],dailies:null,dailyDate:null,weeklies:null,weeklyStart:null,dailyDone:[],weeklyDone:[],weeklySubjects:[],badges:[],lootboxes:0,lootTickets:0,inventory:[],owned:[],equipped:{theme:null,xpbar:null,border:null,titlecolor:null,crit:null,customtitle:null,aura:false,flex:false},permCB:0,permXB:0,extraCrit:0,hasDoubler:false,pcs:0,talismans:[],minionTier:0,minionLastCollect:null,minionSeason:null,bpXp:0,bpClaimed:[],bpSeason:null,miniDone:[],miniDate:null,energy:0,freeRunDay:null,relics:[],relicEquipped:null,relicWeekSeen:null,dg:{upgHp:0,upgDmg:0,upgSpd:0,upgCrit:0,upgArmor:0,weapons:['rusty'],selectedWeapon:'rusty',bestFloor:0,totalRuns:0,totalKills:0}}}
+function defaults(){return{xp:0,level:1,totalXp:0,coins:0,streak:0,lastActive:null,totalDone:0,totalCrits:0,prestige:0,quests:[],skills:{},log:[],achieved:[],streakDays:[],dailies:null,dailyDate:null,weeklies:null,weeklyStart:null,dailyDone:[],weeklyDone:[],weeklySubjects:[],badges:[],lootboxes:0,lootTickets:0,inventory:[],owned:[],equipped:{theme:null,xpbar:null,border:null,titlecolor:null,crit:null,customtitle:null,aura:false,flex:false},permCB:0,permXB:0,extraCrit:0,hasDoubler:false,pcs:0,talismans:[],minionTier:0,minionLastCollect:null,minionSeason:null,bpXp:0,bpClaimed:[],bpSeason:null,miniDone:[],miniDate:null,energy:0,freeRunDay:null,relics:[],relicEquipped:null,relicWeekSeen:null,dg:{upgHp:0,upgDmg:0,upgSpd:0,upgCrit:0,upgArmor:0,upgSteal:0,weapons:['rusty'],selectedWeapon:'rusty',bestFloor:0,totalRuns:0,totalKills:0}}}
 function migrate(d){
   const REN={'AHIS 1':'Gen Ed'};
   if(Array.isArray(d.quests))for(const q of d.quests)if(REN[q.subject])q.subject=REN[q.subject];
@@ -1504,10 +1504,10 @@ const DG_WPN=[
  arc:0,wind:.13,kick:4.2,hstop:.050,knock:160,trail:'#c084fc',tw:4,aoeR:82,
  feel:'Explosive',desc:'Detonates on impact. Deletes clustered packs instead of picking them off.'},
 {id:'great',name:'Executioner',icon:'🪓',tier:5,cost:2100,style:'melee',dmg:62,cd:.52,range:84,
- arc:1.95,wind:.10,kick:8.5,hstop:.085,knock:900,kbHold:.55,trail:'#fb923c',tw:9,shock:true,steal:.05,
+ arc:1.95,wind:.10,kick:8.5,hstop:.085,knock:900,kbHold:.55,trail:'#fb923c',tw:9,shock:true,stealMult:1.35,
  feel:'Devastating',desc:'Enormous arc, bone-shaking impact, sends whole rooms flying.'},
 {id:'storm',name:'Stormcaller',icon:'⚡',tier:6,cost:3400,style:'melee',dmg:46,cd:.165,range:74,
- arc:1.75,wind:.015,kick:5.5,hstop:.042,knock:280,trail:'#67e8f9',tw:7,shock:true,chain:2,steal:.042,
+ arc:1.75,wind:.015,kick:5.5,hstop:.042,knock:280,trail:'#67e8f9',tw:7,shock:true,chain:2,stealMult:1.25,
  feel:'Overwhelming',desc:'Instant, relentless, and arcs lightning to everything nearby.'},
 // ── added lanes: early ranged, heavy, reach, burst, freeze, pull ──
 {id:'sling',name:'Oak Sling',icon:'🪃',tier:1,cost:260,style:'ranged',dmg:13,cd:.42,range:210,
@@ -1526,21 +1526,21 @@ const DG_WPN=[
  arc:1.30,wind:.08,kick:3.6,hstop:.046,knock:200,trail:'#a5f3fc',tw:5,brittle:4,
  feel:'Shattering',desc:'Each hit stacks Brittle. Four stacks and they shatter, spraying frost into everything nearby.'},
 {id:'scythe',name:'Soulreaper',icon:'⚰️',tier:5,cost:2800,style:'melee',dmg:74,cd:.52,range:96,
- arc:1.75,wind:.10,kick:6.0,hstop:.07,knock:230,trail:'#a78bfa',tw:8,reap:.17,steal:.03,
+ arc:1.75,wind:.10,kick:6.0,hstop:.07,knock:230,trail:'#a78bfa',tw:8,reap:.17,stealMult:1.15,
  feel:'Harvesting',desc:'Colossal reach. Each kill may tear loose a soul that fights beside you.'},
 // ── ENDGAME: one apex weapon per playstyle ──
 {id:'eclipse',name:'Eclipse Longbow',icon:'🌙',tier:6,cost:4200,style:'ranged',dmg:27,cd:.42,range:240,
- arc:0,wind:.055,kick:3.0,hstop:.034,knock:150,trail:'#fbbf24',tw:4,pierce:3,burst:2,homing:2.4,lsMult:.5,
+ arc:0,wind:.055,kick:3.0,hstop:.034,knock:150,trail:'#fbbf24',tw:4,pierce:3,burst:2,homing:2.4,stealMult:.5,
  feel:'Immaculate',desc:'ENDGAME · RANGED — homing arrows that skewer whole columns, but the moonlight starves your lifesteal (−50%).'},
 {id:'zephyr',name:'Zephyr Fangs',icon:'🌀',tier:6,cost:4600,style:'melee',dmg:21,cd:.11,range:56,
  arc:1.50,wind:.012,kick:2.6,hstop:.022,knock:150,trail:'#5eead4',tw:5,flurry:2,critB:.10,
- spdB:1.35,dashB:.55,steal:.042,
+ spdB:1.35,dashB:.55,stealMult:1.25,
  feel:'Untouchable',desc:'ENDGAME · SPEED — absurd attack rate, +35% movement, and a dash that is barely ever down.'},
 {id:'nova',name:'Nova Scepter',icon:'🔮',tier:6,cost:5200,style:'aoe',dmg:118,cd:.46,range:230,
  arc:0,wind:.10,kick:6.5,hstop:.062,knock:220,trail:'#f472b6',tw:5,aoeR:104,burnZone:true,
  feel:'Cataclysmic',desc:'ENDGAME · AREA — every cast detonates a small sun. Packs simply stop existing.'},
 {id:'world',name:'Worldbreaker',icon:'🌑',tier:6,cost:6000,style:'melee',dmg:145,cd:.40,range:96,
- arc:2.15,wind:.095,kick:10,hstop:.10,knock:620,trail:'#fb7185',tw:11,shock:true,steal:.07,
+ arc:2.15,wind:.095,kick:10,hstop:.10,knock:620,trail:'#fb7185',tw:11,shock:true,stealMult:1.5,
  feel:'Apocalyptic',desc:'ENDGAME · HEAVY — one swing reshapes the room and everything in it.'}
 ];
 DG_WPN.sort((a,b)=>a.cost-b.cost);
@@ -2169,8 +2169,19 @@ function dgDrawHero(ctx,x,y,t,wpn,aim,anim){
   ctx.fillStyle='#dc2626';ctx.beginPath();ctx.moveTo(x-1,y-16);ctx.quadraticCurveTo(x+5,y-20+Math.sin(t*5)*2,x+2,y-14);ctx.fill();
   if(!behind)dgDrawWeapon(ctx,hx,hy,wAng,w,t,gl);
 }
-const DG_PWR=[{id:'chain',name:'Chain Lightning',icon:'⚡',desc:'Attacks arc to 2 nearby enemies'},{id:'lifesteal',name:'Lifesteal',icon:'🩸',desc:'Heal 12% of damage dealt'},{id:'speed',name:'Swift Boots',icon:'👟',desc:'+30% movement speed'},{id:'shield',name:'Barrier',icon:'🛡️',desc:'Block a hit every 20s'},{id:'double',name:'Double Strike',icon:'✨',desc:'25% chance to hit twice'},{id:'freeze',name:'Frost Touch',icon:'❄️',desc:'Attacks slow enemies 40%'},{id:'explode',name:'Volatile',icon:'💥',desc:'Enemies explode on death'},{id:'thorns',name:'Thorns',icon:'🌹',desc:'Reflect 30% damage taken'},{id:'regen',name:'Regeneration',icon:'💚',desc:'Heal 3 HP/sec'},{id:'crit',name:'Critical Eye',icon:'👁️',desc:'+15% crit chance'},{id:'multi',name:'Multishot',icon:'🎯',desc:'Ranged: fire 3 shots'},{id:'vampaura',name:'Death Aura',icon:'☠️',desc:'3 DPS to nearby enemies'}];
-const DG_UPG=[{id:'Hp',name:'Vitality',icon:'❤️',desc:'+15 Max HP',max:10,cost:i=>80+i*60},{id:'Dmg',name:'Strength',icon:'💪',desc:'+2 Damage',max:10,cost:i=>100+i*80},{id:'Spd',name:'Agility',icon:'👟',desc:'+8% Speed',max:5,cost:i=>120+i*100},{id:'Crit',name:'Precision',icon:'🎯',desc:'+4% Crit',max:5,cost:i=>150+i*120},{id:'Armor',name:'Toughness',icon:'🛡️',desc:'-2 dmg taken',max:5,cost:i=>200+i*150}];
+const DG_PWR=[{id:'chain',name:'Chain Lightning',icon:'⚡',desc:'Attacks arc to 2 nearby enemies'},{id:'speed',name:'Swift Boots',icon:'👟',desc:'+30% movement speed'},{id:'shield',name:'Barrier',icon:'🛡️',desc:'Block a hit every 20s'},{id:'double',name:'Double Strike',icon:'✨',desc:'25% chance to hit twice'},{id:'freeze',name:'Frost Touch',icon:'❄️',desc:'Attacks slow enemies 40%'},{id:'explode',name:'Volatile',icon:'💥',desc:'Enemies explode on death'},{id:'thorns',name:'Thorns',icon:'🌹',desc:'Reflect 30% damage taken'},{id:'regen',name:'Regeneration',icon:'💚',desc:'Heal 3 HP/sec'},{id:'crit',name:'Critical Eye',icon:'👁️',desc:'+15% crit chance'},{id:'multi',name:'Multishot',icon:'🎯',desc:'Ranged: fire 3 shots'},{id:'vampaura',name:'Death Aura',icon:'☠️',desc:'3 DPS to nearby enemies'}];
+const DG_UPG=[{id:'Hp',name:'Vitality',icon:'❤️',desc:'+15 Max HP',max:10,cost:i=>80+i*60},{id:'Dmg',name:'Strength',icon:'💪',desc:'+2 Damage',max:10,cost:i=>100+i*80},{id:'Spd',name:'Agility',icon:'👟',desc:'+8% Speed',max:5,cost:i=>120+i*100},{id:'Crit',name:'Precision',icon:'🎯',desc:'+4% Crit',max:5,cost:i=>150+i*120},{id:'Armor',name:'Toughness',icon:'🛡️',desc:'-2 dmg taken',max:5,cost:i=>200+i*150},
+{id:'Steal',name:'Siphon',icon:'🩸',desc:'+1.2% lifesteal',max:5,cost:i=>350+i*280}];
+// Lifesteal is now a purchased progression gate. At Siphon 0 you heal from nothing you
+// hit — no base rate, no in-run perk. Each level grants both a share of damage healed
+// AND a slice of the per-second budget, because the budget was the real ceiling: a flat
+// 5%/s meant any trickle of lifesteal sustained the same as a huge one at high DPS.
+const DG_STEAL_PER=.012, DG_STEAL_POOL=.008;
+function dgStealLv(){return (D.dg&&D.dg.upgSteal)||0}
+function dgStealPct(){return dgStealLv()*DG_STEAL_PER}
+function dgStealCap(){return dgStealLv()*DG_STEAL_POOL}
+function dgStealMult(){return (dgP&&dgP.weapon&&dgP.weapon.stealMult)||1}
+function dgLsCap(){return dgP.maxHp*dgStealCap()*dgStealMult()}
 let dgCanvas,dgCtx,dgRAF=null,dgLastTs=0,dgScale=1,dgOx=0,dgOy=0;
 let dgSt='menu',dgP={},dgEn=[],dgProj=[],dgPart=[],dgDrops=[],dgNums=[];
 let dgFloor=0,dgRunCoins=0,dgRunKills=0,dgShake=0,dgFlash=0,dgFlashCol='';
@@ -2945,7 +2956,8 @@ function dgUpdatePlayer(dt){
   // delayed follow-up hits (dagger flurry, Double Strike)
   if(dgP.queue&&dgP.queue.length){for(let i=dgP.queue.length-1;i>=0;i--){const q=dgP.queue[i];q.t-=dt;
     if(q.t<=0){dgMeleeHit(q.ang,q.dmg,q.crit,q.w);dgP.queue.splice(i,1)}}}
-  {const cap=dgP.maxHp*.05;if(dgP.lsPool===undefined)dgP.lsPool=cap;
+  {const cap=dgLsCap();
+   if(dgP.lsPool===undefined)dgP.lsPool=cap;
    dgP.lsPool=Math.min(cap,dgP.lsPool+cap*dt);}
   if(dgP.swingT>0)dgP.swingT-=dt;
   if(dgP.recoilT>0)dgP.recoilT-=dt;
@@ -2963,9 +2975,10 @@ function dgUpdatePlayer(dt){
 function dgNearest(x,y,range){let b=null,bd=range;for(const e of dgEn){const d=dgDist({x,y},e)-e.sz;if(d<bd){bd=d;b=e}}return b}
 // Lifesteal draws from a per-second budget (5%% maxHp/s). Stops you face-tanking a boss.
 function dgLifesteal(amt){
-  amt*=(dgP.weapon&&dgP.weapon.lsMult)||1;
+  amt*=dgStealMult();                            // weapons scale the bought rate
   if(amt<=0||dgP.hp>=dgP.maxHp)return 0;
-  const cap=dgP.maxHp*.05;
+  const cap=dgLsCap();
+  if(cap<=0)return 0;                            // Siphon 0 = no lifesteal at all
   if(dgP.lsPool===undefined)dgP.lsPool=cap;
   const heal=Math.min(amt,dgP.lsPool);
   if(heal<=0)return 0;
@@ -3793,8 +3806,7 @@ function dgHitEnemy(e,dmg,crit,sx,sy){
   dgImpact(e.x-Math.cos(a)*e.sz*.5,e.y-Math.sin(a)*e.sz*.5,a,crit);
   dgHitstop=Math.max(dgHitstop,(w.hstop||.026)*(crit?1.9:1));
   dgShakeAdd((w.kick||2.5)*(crit?1.6:.85),Math.cos(a),Math.sin(a));
-  if(dgP.powers.includes('lifesteal'))dgLifesteal(dmg*.07);
-  if(w.steal)dgLifesteal(dmg*w.steal);
+  if(dgStealLv()>0)dgLifesteal(dmg*dgStealPct());
   if(w.brittle)dgBrittle(e,w);
   if(dgP.powers.includes('freeze'))e.frozen=1.5;
   if(dgP.powers.includes('chain')){let cnt=0;dgEn.forEach(en=>{if(en!==e&&cnt<2&&dgDist(e,en)<100){en.hp-=Math.floor(dmg*.4);dgNums.push({x:en.x,y:en.y-en.sz,text:''+Math.floor(dmg*.4),crit:false,life:.6,ml:.6,alpha:1});cnt++;dgPart.push({x:e.x,y:e.y,vx:0,vy:0,life:.2,ml:.2,color:'#22d3ee',size:3,type:'chain',tx:en.x,ty:en.y});if(en.hp<=0)dgKillEnemy(en)}})}
