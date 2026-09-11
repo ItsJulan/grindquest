@@ -1539,8 +1539,8 @@ const DG_WPN=[
 {id:'nova',name:'Nova Scepter',icon:'🔮',tier:6,cost:5200,style:'aoe',dmg:118,cd:.46,range:230,
  arc:0,wind:.10,kick:6.5,hstop:.062,knock:220,trail:'#f472b6',tw:5,aoeR:104,burnZone:true,
  feel:'Cataclysmic',desc:'ENDGAME · AREA — every cast detonates a small sun. Packs simply stop existing.'},
-{id:'world',name:'Worldbreaker',icon:'🌑',tier:6,cost:6000,style:'melee',dmg:145,cd:.40,range:96,
- arc:2.15,wind:.095,kick:10,hstop:.10,knock:620,trail:'#fb7185',tw:11,shock:true,stealMult:1.5,
+{id:'world',name:'Worldbreaker',icon:'🌑',tier:6,cost:20000,style:'melee',dmg:145,cd:.36,range:96,
+ arc:2.15,wind:.095,kick:10,hstop:.10,knock:620,trail:'#fb7185',tw:11,shock:true,stealMult:1.5,fissure:true,
  feel:'Apocalyptic',desc:'ENDGAME · HEAVY — one swing reshapes the room and everything in it.'}
 ];
 DG_WPN.sort((a,b)=>a.cost-b.cost);
@@ -2726,7 +2726,7 @@ function dgStartRun(){
     windT:0,windMax:1,windAng:0,queue:[],swingT:0,swingMax:.2,swingAng:0,recoilT:0};
   dgEn=[];dgProj=[];dgPart=[];dgDrops=[];dgNums=[];dgObs=[];dgGhosts=[];
   dgFloor=0;dgRunCoins=0;dgRunKills=0;dgShake=0;dgFlash=0;dgKeys={};dgTouchDir={x:0,y:0};
-  dgHitstop=0;dgDashQueued=false;dgAlert=null;dgClearT=0;dgBeams=[];dgHurtT=0;dgRelicDrop=null;dgRelicDropT=0;dgTrail=[];dgFlames=[];dgMinions=[];
+  dgHitstop=0;dgDashQueued=false;dgAlert=null;dgClearT=0;dgBeams=[];dgHurtT=0;dgRelicDrop=null;dgRelicDropT=0;dgTrail=[];dgFlames=[];dgMinions=[];dgCrk=null;
   dgBlink={aiming:false,t:0,cd:0,gx:0,gy:0,held:false};dgMouse.active=false;
   dgGraze={chg:0,glow:0,pool:DG_GRAZE_POOL};dgNova={t:0,x:0,y:0,seed:0};dgPulse={n:0,t:0,flash:0};
   dgSt='playing';
@@ -2755,7 +2755,7 @@ function dgEndRun(){
   addLog('Dungeon: Floor '+dgFloor+(dgFreeRun?' (free run — no coins)':', +'+earned+' coins'+(earned<dgRunCoins?' (daily cap)':'')),0);
   save();renderTop();dgRenderMenu();
 }
-function dgNextFloor(){dgFloor++;dgClearT=0;dgBeams=[];dgTrail=[];dgFlames=[];dgMinions=[];dgEn=[];dgProj=[];dgP.x=DGW/2;dgP.y=DGH-60;dgFloorFade=1;const ac=dgZone().ac;dgAmbient=[];for(let i=0;i<20;i++)dgAmbient.push({x:Math.random()*DGW,y:Math.random()*DGH,vx:(Math.random()-.5)*8,vy:-3-Math.random()*5,life:2+Math.random()*4,ml:6,size:.8+Math.random()*1.5,color:ac});dgGenDecos();dgGenObs();dgGhosts=[];dgSpawnFloor()}
+function dgNextFloor(){dgFloor++;dgClearT=0;dgBeams=[];dgTrail=[];dgFlames=[];dgMinions=[];dgCrk=null;dgEn=[];dgProj=[];dgP.x=DGW/2;dgP.y=DGH-60;dgFloorFade=1;const ac=dgZone().ac;dgAmbient=[];for(let i=0;i<20;i++)dgAmbient.push({x:Math.random()*DGW,y:Math.random()*DGH,vx:(Math.random()-.5)*8,vy:-3-Math.random()*5,life:2+Math.random()*4,ml:6,size:.8+Math.random()*1.5,color:ac});dgGenDecos();dgGenObs();dgGhosts=[];dgSpawnFloor()}
 function dgSpawnFloor(){
   const f=dgFloor,isBoss=f%5===0;
   if(isBoss){const bIdx=Math.min(Math.floor(f/5)-1,DG_BOSS.length-1),b=DG_BOSS[bIdx];
@@ -2821,6 +2821,7 @@ function dgUpdate(dt){
     if(z.tick<=0){z.tick=.42;
       for(const e of dgEn){if(dgDist(z,e)<z.r+e.sz)dgHitEnemy(e,z.dmg,false,z.x,z.y)}}
     if(z.life<=0)dgFlames.splice(i,1)}
+  dgUpdateCracks(dt);
   dgUpdateMinions(dt);
   for(let i=dgTrail.length-1;i>=0;i--){const f=dgTrail[i];f.life-=dt;f.tick-=dt;
     if(f.tick<=0){f.tick=.28;
@@ -2993,11 +2994,120 @@ function dgLifesteal(amt){
   dgP.lsPool-=heal;dgP.hp=Math.min(dgP.maxHp,dgP.hp+heal);
   return heal;
 }
+// ═══ WORLDBREAKER FISSURES ═══
+// One system at a time. It anchors at the mob struck by the first hit and never
+// moves; every later hit only extends it. Branch paths are generated in full at
+// spawn and revealed by a single growth scalar, so growing and shrinking never
+// re-randomise the shape and cost nothing but a length comparison.
+const DG_CRK_FULL=760;            // virtual px from origin at full growth (~map span)
+const DG_CRK_SEG=30;              // segment length; also sets vertex spacing for contact
+const DG_CRK_HITS_FULL=6.5;       // consecutive hits to reach full length
+const DG_CRK_WINDOW=10;           // hit counter resets on this cadence; progress does not
+const DG_CRK_GRACE=15;            // seconds without growth before it starts shrinking
+const DG_CRK_SHRINK=.20;          // growth lost per second while shrinking
+const DG_CRK_ASSIST=.16;          // max radians of lean per segment. Weak on purpose:
+                                  // an assisted branch should lean, never home.
+const DG_CRK_HIT_R=20;            // contact radius around a vertex
+const DG_CRK_BURN=1.5;            // aura seconds, refreshed on contact
+const DG_CRK_TICK=.42;            // aura damage cadence, same as Nova's burn zones
+const DG_CRK_OPEN=.30;
+let dgCrk=null,dgCrkDmg=false;
+
+function dgCrackBranch(x,y,ang,tgt){
+  const B=dgL(),pts=[{x,y}],cum=[0];
+  const steps=Math.ceil(DG_CRK_FULL/DG_CRK_SEG);
+  let cx=x,cy=y,a=ang,total=0;
+  for(let i=0;i<steps;i++){
+    const far=i/steps;
+    a+=(Math.random()-.5)*(.34+far*.9);          // wanders more the further out it gets
+    if(tgt){
+      const want=Math.atan2(tgt.y-cy,tgt.x-cx);
+      const d=((want-a+Math.PI*3)%(Math.PI*2))-Math.PI;
+      a+=Math.max(-DG_CRK_ASSIST,Math.min(DG_CRK_ASSIST,d));
+    }
+    const len=DG_CRK_SEG*(.75+Math.random()*.5);
+    cx=Math.max(B.l+4,Math.min(B.r-4,cx+Math.cos(a)*len));
+    cy=Math.max(B.t+4,Math.min(B.b-4,cy+Math.sin(a)*len));
+    total+=len;pts.push({x:cx,y:cy});cum.push(total);
+  }
+  return {pts,cum,len:total,assisted:!!tgt};
+}
+function dgCrackSpawn(x,y){
+  const n=4+(Math.random()<.5?1:0);
+  const live=dgEn.slice();
+  const nAssist=Math.min(n,2+(Math.random()<.5?1:0));
+  const pick=new Set();
+  while(pick.size<nAssist&&live.length)pick.add(Math.floor(Math.random()*n));
+  const base=Math.random()*Math.PI*2,branches=[];
+  for(let i=0;i<n;i++){
+    // assist targets are drawn at random from everything alive, NOT by proximity
+    const tgt=pick.has(i)&&live.length?live[Math.floor(Math.random()*live.length)]:null;
+    branches.push(dgCrackBranch(x,y,base+i/n*Math.PI*2+(Math.random()-.5)*.55,tgt));
+  }
+  dgCrk={ox:x,oy:y,branches,growth:0,hits:0,since:0,win:0,tick:0,open:0,shrinking:false,pulse:0};
+}
+// Only ever called from a real melee connect. Damage the fissures deal themselves must
+// not reach here, or the system feeds itself and runs away.
+function dgCrackHit(x,y){
+  if(!dgCrk)dgCrackSpawn(x,y);
+  const c=dgCrk;
+  c.hits++;c.since=0;c.shrinking=false;c.pulse=1;
+  c.growth=Math.min(1,c.growth+1/DG_CRK_HITS_FULL);
+}
+function dgCrackGrownPts(){
+  const out=[];if(!dgCrk)return out;
+  const reach=dgCrk.growth*DG_CRK_FULL;
+  for(const b of dgCrk.branches){
+    for(let i=0;i<b.pts.length;i++){
+      if(b.cum[i]>reach)break;
+      out.push(b.pts[i]);
+    }
+  }
+  return out;
+}
+function dgCrackDamage(e,dmg,sx,sy){
+  dgCrkDmg=true;                     // halves lifesteal for this hit
+  dgHitEnemy(e,dmg,false,sx,sy);
+  dgCrkDmg=false;
+}
+function dgUpdateCracks(dt){
+  // the aura keeps burning briefly after a mob steps off a fissure
+  for(const e of dgEn){
+    if(!(e.burnT>0))continue;
+    e.burnT-=dt;e.burnTick=(e.burnTick||0)-dt;
+    if(e.burnTick<=0){e.burnTick=DG_CRK_TICK;
+      dgCrackDamage(e,Math.max(2,Math.floor((dgP.baseDmg||12)*.10*DG_CRK_TICK)),e.x,e.y+14)}
+  }
+  if(!dgCrk)return;
+  const c=dgCrk;
+  c.since+=dt;c.win+=dt;
+  if(c.open<1)c.open=Math.min(1,c.open+dt/DG_CRK_OPEN);
+  if(c.pulse>0)c.pulse=Math.max(0,c.pulse-dt*3);
+  if(c.win>=DG_CRK_WINDOW){c.win=0;c.hits=0}      // counter resets, progress is kept
+  if(c.since>DG_CRK_GRACE){
+    c.shrinking=true;
+    c.growth-=DG_CRK_SHRINK*dt;
+    if(c.growth<=0){dgCrk=null;return}            // closed: the next hit starts a new one
+  }
+  c.tick-=dt;
+  if(c.tick<=0){
+    c.tick=DG_CRK_TICK*.5;
+    const pts=dgCrackGrownPts();
+    if(pts.length)for(const e of dgEn){
+      for(let i=0;i<pts.length;i++){
+        const p=pts[i];
+        if(Math.abs(p.x-e.x)>DG_CRK_HIT_R+e.sz)continue;
+        if(Math.hypot(p.x-e.x,p.y-e.y)<DG_CRK_HIT_R+e.sz){e.burnT=DG_CRK_BURN;break}
+      }
+    }
+  }
+}
 function dgMeleeHit(ang,dm,ic,w){
   const hit=[];
   dgEn.forEach(e=>{const d=dgDist(dgP,e)-e.sz;if(d>w.range)return;
     const a=Math.atan2(e.y-dgP.y,e.x-dgP.x),diff=Math.abs(((a-ang+Math.PI*3)%(Math.PI*2))-Math.PI);
     if(diff<w.arc/2){dgHitEnemy(e,dm,ic);hit.push(e)}});
+  if(w.fissure)for(const e of hit)dgCrackHit(e.x,e.y);   // each connect counts: crowds pay
   dgHitBarrels(dgP.x+Math.cos(ang)*w.range*.55,dgP.y+Math.sin(ang)*w.range*.55,w.range*.5);
   // sweeping arc that actually travels through its swing
   dgPart.push({x:dgP.x,y:dgP.y,vx:0,vy:0,life:.21,ml:.21,type:'swing',angle:ang,arc:w.arc,r:w.range,color:w.trail,w:w.tw});
@@ -3814,7 +3924,7 @@ function dgHitEnemy(e,dmg,crit,sx,sy){
   dgImpact(e.x-Math.cos(a)*e.sz*.5,e.y-Math.sin(a)*e.sz*.5,a,crit);
   dgHitstop=Math.max(dgHitstop,(w.hstop||.026)*(crit?1.9:1));
   dgShakeAdd((w.kick||2.5)*(crit?1.6:.85),Math.cos(a),Math.sin(a));
-  {const sp=dgStealPct();if(sp>0)dgLifesteal(dmg*sp)}
+  {const sp=dgStealPct()*(dgCrkDmg?.5:1);if(sp>0)dgLifesteal(dmg*sp)}
   if(w.brittle)dgBrittle(e,w);
   if(dgP.powers.includes('freeze'))e.frozen=1.5;
   if(dgP.powers.includes('chain')){let cnt=0;dgEn.forEach(en=>{if(en!==e&&cnt<2&&dgDist(e,en)<100){en.hp-=Math.floor(dmg*.4);dgNums.push({x:en.x,y:en.y-en.sz,text:''+Math.floor(dmg*.4),crit:false,life:.6,ml:.6,alpha:1});cnt++;dgPart.push({x:e.x,y:e.y,vx:0,vy:0,life:.2,ml:.2,color:'#22d3ee',size:3,type:'chain',tx:en.x,ty:en.y});if(en.hp<=0)dgKillEnemy(en)}})}
@@ -4224,6 +4334,28 @@ function dgRender(){
     fg.addColorStop(.45,'rgba(249,115,22,'+(a*.34)+')');
     fg.addColorStop(1,'rgba(190,40,10,0)');
     ctx.fillStyle=fg;ctx.beginPath();ctx.arc(f.x,f.y+4,25,0,Math.PI*2);ctx.fill();ctx.restore()}
+  if(dgCrk){
+    const c=dgCrk,reach=c.growth*DG_CRK_FULL,fade=c.shrinking?.75:1;
+    ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
+    for(let pass=0;pass<2;pass++){
+      ctx.strokeStyle=pass?'rgba(255,138,90,'+(.95*fade)+')':'rgba(40,6,10,'+(.9*fade)+')';
+      ctx.lineWidth=pass?3.2:8;
+      for(const b of c.branches){
+        ctx.beginPath();let started=false;
+        for(let i=0;i<b.pts.length;i++){
+          if(b.cum[i]>reach)break;
+          const p=b.pts[i];
+          if(!started){ctx.moveTo(p.x,p.y);started=true}else ctx.lineTo(p.x,p.y);
+        }
+        if(started)ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+  for(const e of dgEn){if(e.burnT>0){
+    ctx.save();ctx.globalCompositeOperation='lighter';ctx.globalAlpha=Math.min(1,e.burnT)*.5;
+    ctx.fillStyle='#ff6a2a';ctx.beginPath();ctx.arc(e.x,e.y,e.sz*1.25,0,Math.PI*2);ctx.fill();ctx.restore();
+  }}
   for(const z of dgFlames){const a=Math.min(1,z.life/z.ml);
     ctx.save();ctx.globalCompositeOperation='lighter';
     const zg=ctx.createRadialGradient(z.x,z.y,0,z.x,z.y,z.r);
