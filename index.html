@@ -3030,7 +3030,15 @@ function dgCrackBranch(x,y,ang,tgt){
     cy=Math.max(B.t+4,Math.min(B.b-4,cy+Math.sin(a)*len));
     total+=len;pts.push({x:cx,y:cy});cum.push(total);
   }
-  return {pts,cum,len:total,assisted:!!tgt};
+  const grit=[];
+  for(let i=1;i<pts.length;i++){
+    const p=pts[i],n=Math.random()<.55?2:1;
+    for(let k=0;k<n;k++){
+      const a2=Math.random()*Math.PI*2,r2=6+Math.random()*13;
+      grit.push({x:p.x+Math.cos(a2)*r2,y:p.y+Math.sin(a2)*r2,r:.7+Math.random()*1.5,d:cum[i]});
+    }
+  }
+  return {pts,cum,len:total,assisted:!!tgt,grit};
 }
 function dgCrackSpawn(x,y){
   const n=4+(Math.random()<.5?1:0);
@@ -3053,10 +3061,17 @@ function dgCrackHit(x,y){
   const c=dgCrk;
   c.hits++;c.since=0;c.shrinking=false;c.pulse=1;
   c.growth=Math.min(1,c.growth+1/DG_CRK_HITS_FULL);
+  const reach=(c.shown===undefined?0:c.shown)*DG_CRK_FULL;
+  for(const b of c.branches){
+    const tip=dgCrackTip(b,reach);if(!tip)continue;
+    for(let k=0;k<3;k++){const a2=Math.random()*Math.PI*2,sp=35+Math.random()*70;
+      dgPart.push({x:tip.x,y:tip.y,vx:Math.cos(a2)*sp,vy:Math.sin(a2)*sp-40,
+        life:.3+Math.random()*.4,ml:.7,color:k?'#ff8a3c':'#ffd9a0',size:1+Math.random()*1.8,type:'spark'});}
+  }
 }
 function dgCrackGrownPts(){
   const out=[];if(!dgCrk)return out;
-  const reach=dgCrk.growth*DG_CRK_FULL;
+  const reach=(dgCrk.shown===undefined?dgCrk.growth:dgCrk.shown)*DG_CRK_FULL;
   for(const b of dgCrk.branches){
     for(let i=0;i<b.pts.length;i++){
       if(b.cum[i]>reach)break;
@@ -3082,6 +3097,8 @@ function dgUpdateCracks(dt){
   const c=dgCrk;
   c.since+=dt;c.win+=dt;
   if(c.open<1)c.open=Math.min(1,c.open+dt/DG_CRK_OPEN);
+  if(c.shown===undefined)c.shown=0;
+  c.shown+=(c.growth-c.shown)*Math.min(1,dt*5.5);
   if(c.pulse>0)c.pulse=Math.max(0,c.pulse-dt*3);
   if(c.win>=DG_CRK_WINDOW){c.win=0;c.hits=0}      // counter resets, progress is kept
   if(c.since>DG_CRK_GRACE){
@@ -3101,6 +3118,99 @@ function dgUpdateCracks(dt){
       }
     }
   }
+}
+// Six stroked passes per branch, all cheap: the whole system measured 0.09ms as a
+// two-pass placeholder and the budget is 16.7ms, so this spends where it shows.
+// Reveal is driven by c.shown easing toward c.growth, which gives the spreading
+// animation for free and means opening, spreading and closing are all one mechanism.
+function dgCrackPath(ctx,b,reach){
+  let started=false;
+  for(let i=0;i<b.pts.length;i++){
+    if(b.cum[i]>reach)break;
+    const p=b.pts[i];
+    if(!started){ctx.moveTo(p.x,p.y);started=true}else ctx.lineTo(p.x,p.y);
+  }
+  return started;
+}
+function dgCrackTip(b,reach){
+  let last=null;
+  for(let i=0;i<b.pts.length;i++){if(b.cum[i]>reach)break;last=b.pts[i]}
+  return last;
+}
+function dgDrawCracks(ctx,t){
+  const c=dgCrk;if(!c)return;
+  const shown=c.shown===undefined?c.growth:c.shown;
+  if(shown<=0.001)return;
+  const reach=shown*DG_CRK_FULL;
+  const op=c.open,fade=op*(c.shrinking?.82:1);
+  const W=1+op*.35;                       // widths swell as it opens
+
+  ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
+
+  // 1. ash and scorched dirt bleeding onto the floor either side
+  ctx.strokeStyle='rgba(26,16,14,'+(.34*fade).toFixed(3)+')';
+  ctx.lineWidth=26*W;
+  for(const b of c.branches){ctx.beginPath();if(dgCrackPath(ctx,b,reach))ctx.stroke()}
+  ctx.strokeStyle='rgba(58,40,32,'+(.30*fade).toFixed(3)+')';
+  ctx.lineWidth=15*W;
+  for(const b of c.branches){ctx.beginPath();if(dgCrackPath(ctx,b,reach))ctx.stroke()}
+
+  // 2. grit flecks, positioned once at spawn so they never crawl
+  ctx.fillStyle='rgba(20,13,11,'+(.5*fade).toFixed(3)+')';
+  for(const b of c.branches)for(const g of b.grit){
+    if(g.d>reach)continue;
+    ctx.beginPath();ctx.arc(g.x,g.y,g.r,0,Math.PI*2);ctx.fill();
+  }
+
+  // 3. the break itself — a hole, so near-black and wider than the lava
+  ctx.strokeStyle='rgba(9,4,6,'+(.95*fade).toFixed(3)+')';
+  ctx.lineWidth=11*W;
+  for(const b of c.branches){ctx.beginPath();if(dgCrackPath(ctx,b,reach))ctx.stroke()}
+
+  ctx.globalCompositeOperation='lighter';
+
+  // 4. bloom spilling out of the break
+  ctx.strokeStyle='rgba(150,20,14,'+(.16*fade).toFixed(3)+')';
+  ctx.lineWidth=30*W;
+  for(const b of c.branches){ctx.beginPath();if(dgCrackPath(ctx,b,reach))ctx.stroke()}
+
+  // 5. the lava body, then a hot core on top of it
+  ctx.strokeStyle='rgba(196,26,20,'+(.90*fade).toFixed(3)+')';
+  ctx.lineWidth=6.4*W;
+  for(const b of c.branches){ctx.beginPath();if(dgCrackPath(ctx,b,reach))ctx.stroke()}
+  ctx.strokeStyle='rgba(255,126,58,'+(.85*fade).toFixed(3)+')';
+  ctx.lineWidth=2.7*W;
+  for(const b of c.branches){ctx.beginPath();if(dgCrackPath(ctx,b,reach))ctx.stroke()}
+
+  // 6. bright pulses running outward along the channel — a dashed stroke with a
+  //    moving offset reads as flow for the price of one more pass
+  ctx.setLineDash([16,64]);
+  ctx.lineDashOffset=-t*90;
+  ctx.strokeStyle='rgba(255,214,150,'+(.75*fade).toFixed(3)+')';
+  ctx.lineWidth=3.4*W;
+  for(const b of c.branches){ctx.beginPath();if(dgCrackPath(ctx,b,reach))ctx.stroke()}
+  ctx.setLineDash([]);
+
+  // 7. the advancing edge flares while it is actually spreading
+  if(c.pulse>0){
+    const pw=c.pulse;
+    for(const b of c.branches){
+      const tip=dgCrackTip(b,reach);if(!tip)continue;
+      const g=ctx.createRadialGradient(tip.x,tip.y,0,tip.x,tip.y,26*pw+8);
+      g.addColorStop(0,'rgba(255,236,198,'+(.85*pw).toFixed(3)+')');
+      g.addColorStop(.45,'rgba(255,110,40,'+(.34*pw).toFixed(3)+')');
+      g.addColorStop(1,'rgba(180,20,10,0)');
+      ctx.fillStyle=g;ctx.beginPath();ctx.arc(tip.x,tip.y,26*pw+8,0,Math.PI*2);ctx.fill();
+    }
+  }
+  // 8. the origin keeps a hot glow, brightest during the opening beat
+  {const og=ctx.createRadialGradient(c.ox,c.oy,0,c.ox,c.oy,30+14*(1-op));
+   og.addColorStop(0,'rgba(255,224,176,'+(.5*fade*(.55+.45*(1-op))).toFixed(3)+')');
+   og.addColorStop(.5,'rgba(220,50,22,'+(.22*fade).toFixed(3)+')');
+   og.addColorStop(1,'rgba(140,16,10,0)');
+   ctx.fillStyle=og;ctx.beginPath();ctx.arc(c.ox,c.oy,30+14*(1-op),0,Math.PI*2);ctx.fill()}
+
+  ctx.restore();ctx.globalCompositeOperation='source-over';ctx.globalAlpha=1;
 }
 function dgMeleeHit(ang,dm,ic,w){
   const hit=[];
@@ -4227,6 +4337,7 @@ function dgRender(){
   // Ambient dust
   for(const m of dgAmbient){ctx.globalAlpha=Math.min(m.life,1)*0.25;ctx.fillStyle=m.color;ctx.beginPath();ctx.arc(m.x,m.y,m.size,0,Math.PI*2);ctx.fill()}
   ctx.globalAlpha=1;
+  dgDrawCracks(ctx,t);
   // Obstacles
   for(const o of dgObs)if(o.t!=='spike')dgDrawObs(ctx,o,zi,t);
   // Drops — drawn, not emoji
@@ -4334,28 +4445,25 @@ function dgRender(){
     fg.addColorStop(.45,'rgba(249,115,22,'+(a*.34)+')');
     fg.addColorStop(1,'rgba(190,40,10,0)');
     ctx.fillStyle=fg;ctx.beginPath();ctx.arc(f.x,f.y+4,25,0,Math.PI*2);ctx.fill();ctx.restore()}
-  if(dgCrk){
-    const c=dgCrk,reach=c.growth*DG_CRK_FULL,fade=c.shrinking?.75:1;
-    ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
-    for(let pass=0;pass<2;pass++){
-      ctx.strokeStyle=pass?'rgba(255,138,90,'+(.95*fade)+')':'rgba(40,6,10,'+(.9*fade)+')';
-      ctx.lineWidth=pass?3.2:8;
-      for(const b of c.branches){
-        ctx.beginPath();let started=false;
-        for(let i=0;i<b.pts.length;i++){
-          if(b.cum[i]>reach)break;
-          const p=b.pts[i];
-          if(!started){ctx.moveTo(p.x,p.y);started=true}else ctx.lineTo(p.x,p.y);
-        }
-        if(started)ctx.stroke();
-      }
+  for(const e of dgEn){
+    if(!(e.burnT>0))continue;
+    const ba=Math.min(1,e.burnT/DG_CRK_BURN);
+    ctx.save();ctx.globalCompositeOperation='lighter';
+    const fl=.55+Math.sin(t*13+e.x*.21)*.2+Math.sin(t*7.3+e.y*.17)*.12;
+    const g=ctx.createRadialGradient(e.x,e.y+2,e.sz*.2,e.x,e.y+2,e.sz*1.5);
+    g.addColorStop(0,'rgba(255,170,80,'+(.40*ba*fl).toFixed(3)+')');
+    g.addColorStop(.55,'rgba(214,52,26,'+(.24*ba*fl).toFixed(3)+')');
+    g.addColorStop(1,'rgba(120,12,8,0)');
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(e.x,e.y+2,e.sz*1.5,0,Math.PI*2);ctx.fill();
+    // two slow licks rather than a bonfire — visible, not flashy
+    for(let k=0;k<2;k++){
+      const ph=t*2.6+k*3.1+e.x*.05,ry=((ph%1)),lx=e.x+Math.sin(ph*2.2)*e.sz*.5;
+      ctx.globalAlpha=ba*(1-ry)*.5;
+      ctx.fillStyle=k?'#ffcf7a':'#ff7a33';
+      ctx.beginPath();ctx.arc(lx,e.y-ry*e.sz*1.5,1.9*(1-ry*.6),0,Math.PI*2);ctx.fill();
     }
-    ctx.restore();
+    ctx.restore();ctx.globalAlpha=1;
   }
-  for(const e of dgEn){if(e.burnT>0){
-    ctx.save();ctx.globalCompositeOperation='lighter';ctx.globalAlpha=Math.min(1,e.burnT)*.5;
-    ctx.fillStyle='#ff6a2a';ctx.beginPath();ctx.arc(e.x,e.y,e.sz*1.25,0,Math.PI*2);ctx.fill();ctx.restore();
-  }}
   for(const z of dgFlames){const a=Math.min(1,z.life/z.ml);
     ctx.save();ctx.globalCompositeOperation='lighter';
     const zg=ctx.createRadialGradient(z.x,z.y,0,z.x,z.y,z.r);
