@@ -3483,11 +3483,13 @@ function dgDrawCracks(ctx,t){
   ctx.restore();ctx.globalCompositeOperation='source-over';ctx.globalAlpha=1;
 }
 function dgMeleeHit(ang,dm,ic,w){
-  const hit=[];
+  const hit=[],fed=[];
   dgEn.forEach(e=>{const d=dgDist(dgP,e)-e.sz;if(d>w.range)return;
     const a=Math.atan2(e.y-dgP.y,e.x-dgP.x),diff=Math.abs(((a-ang+Math.PI*3)%(Math.PI*2))-Math.PI);
-    if(diff<w.arc/2){dgHitEnemy(e,dm,ic);hit.push(e)}});
-  if(w.fissure)for(const e of hit)dgCrackHit(e.x,e.y);   // each connect counts: crowds pay
+    if(diff<w.arc/2){const landed=dgHitEnemy(e,dm,ic);hit.push(e);if(landed)fed.push(e)}});
+  // Each connect counts, so crowds pay — but a swing absorbed by a shielded boss is
+  // not a connect, and must not grow anything.
+  if(w.fissure)for(const e of fed)dgCrackHit(e.x,e.y);
   dgHitBarrels(dgP.x+Math.cos(ang)*w.range*.55,dgP.y+Math.sin(ang)*w.range*.55,w.range*.5);
   // sweeping arc that actually travels through its swing
   dgPart.push({x:dgP.x,y:dgP.y,vx:0,vy:0,life:.21,ml:.21,type:'swing',angle:ang,arc:w.arc,r:w.range,color:w.trail,w:w.tw});
@@ -4279,17 +4281,19 @@ function dgImpact(x,y,a,crit){
     dgPart.push({x,y,vx:Math.cos(sp)*s,vy:Math.sin(sp)*s,life:.16+Math.random()*.2,ml:.36,color:crit?'#ffd34d':'#ffffff',size:1.2+Math.random()*2.2,type:'spark'})}
   if(crit){dgPart.push({x,y,vx:0,vy:0,life:.14,ml:.14,color:'#fff',size:16,type:'ring'})}
 }
+// Returns true only when damage was actually dealt. A hit absorbed by phase i-frames
+// or stopped at a phase gate returns false, so it cannot be mistaken for a connect.
 function dgHitEnemy(e,dmg,crit,sx,sy){
-  if(!dgEn.includes(e))return;
-  if(e.invuln){dgNums.push({x:e.x,y:e.y-e.sz,text:'phased',crit:false,life:.5,ml:.5,alpha:1,color:'#67e8f9'});return}
+  if(!dgEn.includes(e))return false;
+  if(e.invuln){dgNums.push({x:e.x,y:e.y-e.sz,text:'phased',crit:false,life:.5,ml:.5,alpha:1,color:'#67e8f9'});return false}
   if(e.iFrame>0){dgNums.push({x:e.x,y:e.y-e.sz,text:'shielded',crit:false,life:.45,ml:.45,alpha:1,color:'#fbbf24'});
-    dgPart.push({x:e.x,y:e.y,vx:0,vy:0,life:.16,ml:.16,color:'#fbbf24',size:e.sz*1.5,type:'ring'});return}
+    dgPart.push({x:e.x,y:e.y,vx:0,vy:0,life:.16,ml:.16,color:'#fbbf24',size:e.sz*1.5,type:'ring'});return false}
   if(e.boss&&e.phases){
     const room=e.hp-dgBossFloorHp(e);
     if(room<=0.0001){
       dgNums.push({x:e.x,y:e.y-e.sz,text:'shielded',crit:false,life:.45,ml:.45,alpha:1,color:'#fbbf24'});
       dgPart.push({x:e.x,y:e.y,vx:0,vy:0,life:.16,ml:.16,color:'#fbbf24',size:e.sz*1.5,type:'ring'});
-      return;
+      return false;
     }
     if(dmg>room)dmg=room;                     // burst is capped at the gate
   }
@@ -4312,6 +4316,7 @@ function dgHitEnemy(e,dmg,crit,sx,sy){
   if(dgP.powers.includes('freeze'))e.frozen=1.5;
   if(dgP.powers.includes('chain')){let cnt=0;dgEn.forEach(en=>{if(en!==e&&cnt<2&&dgDist(e,en)<100){en.hp-=Math.floor(dmg*.4);dgNums.push({x:en.x,y:en.y-en.sz,text:''+Math.floor(dmg*.4),crit:false,life:.6,ml:.6,alpha:1});cnt++;dgPart.push({x:e.x,y:e.y,vx:0,vy:0,life:.2,ml:.2,color:'#22d3ee',size:3,type:'chain',tx:en.x,ty:en.y});if(en.hp<=0)dgKillEnemy(en)}})}
   if(e.hp<=0)dgKillEnemy(e);
+  return true;
 }
 // Boss tier drives the drop rate. Free runs DO roll — only coins are withheld.
 function dgRollRelic(e){
