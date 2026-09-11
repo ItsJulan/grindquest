@@ -2177,6 +2177,14 @@ const DG_UPG=[{id:'Hp',name:'Vitality',icon:'❤️',desc:'+15 Max HP',max:10,co
 // AND a slice of the per-second budget, because the budget was the real ceiling: a flat
 // 5%/s meant any trickle of lifesteal sustained the same as a huge one at high DPS.
 const DG_STEAL_PCT_MAX=.05, DG_STEAL_CAP_MAX=.025;
+function dgWpnSteal(w){
+  if(!w||w.stealMult===undefined)return null;
+  return {
+    pct:(w.stealPct!==undefined?w.stealPct:DG_STEAL_PCT_MAX)*w.stealMult,
+    cap:(w.stealCap!==undefined?w.stealCap:DG_STEAL_CAP_MAX)*w.stealMult,
+    mult:w.stealMult
+  };
+}
 function dgStealMaxLv(){const u=DG_UPG.find(x=>x.id==='Steal');return u?u.max:5}
 function dgStealLv(){return (D.dg&&D.dg.upgSteal)||0}
 function dgStealScale(){return Math.min(1,dgStealLv()/dgStealMaxLv())}
@@ -2323,6 +2331,16 @@ function dgRenderMenu(){
         '<span>Speed</span>'+bar(spd,6.5,'#7dd3fc')+'<b>'+spd.toFixed(1)+'/s</b>'+
         '<span>Impact</span>'+bar(w.kick,10,'#fb923c')+'<b>'+(w.knock<0?'⟵ pull':w.knock)+'</b>'+
         '<span>Reach</span>'+bar(w.range,270,'#a3e635')+'<b>'+w.range+'</b>'+
+        (()=>{const ls=dgWpnSteal(w);
+          if(!ls)return '<span style="opacity:.45">Lifesteal</span>'+
+            '<div class="dg-wbar"></div><b style="opacity:.45">—</b>';
+          const t='Heals '+(ls.pct*100).toFixed(1)+'% of damage dealt, up to '+
+            (ls.cap*100).toFixed(1)+'% of your max HP per second. Shown at Siphon 5; '+
+            'lower levels scale down from this. Weapon multiplier x'+ls.mult+'.';
+          return '<span title="'+t+'">Lifesteal</span>'+bar(ls.pct,.09,'#fb7185')+
+            '<b title="'+t+'">'+(ls.pct*100).toFixed(1)+'%<span style="opacity:.6;font-weight:400"> · '+
+            (ls.cap*100).toFixed(1)+'%/s</span></b>';
+        })()+
       '</div>'+
       (has?'<div class="dg-wown">'+(act?'✓ EQUIPPED':'Tap to equip')+'</div>'
           :'<button class="dg-wbuy"'+(D.coins<w.cost?' disabled':'')+'>'+w.cost+' ⭐</button>')+
