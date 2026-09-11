@@ -4297,7 +4297,10 @@ function dgHitEnemy(e,dmg,crit,sx,sy){
   const ox=sx===undefined?dgP.x:sx,oy=sy===undefined?dgP.y:sy;
   const a=Math.atan2(e.y-oy,e.x-ox);
   const w=(dgP&&dgP.weapon)||{};
-  if(!e.boss){const kb=(w.knock||170)*(crit?1.7:1)*(e.elite?.6:1);
+  // Damage-over-time must not shove. The fissure aura ticks every 0.42s from a source
+  // point below the mob, which resolved to straight up at the weapon's full knockback —
+  // Worldbreaker 620 — and launched burning mobs to the top of the arena on every tick.
+  if(!e.boss&&!dgCrkDmg){const kb=(w.knock||170)*(crit?1.7:1)*(e.elite?.6:1);
     e.kx=(e.kx||0)+Math.cos(a)*kb;e.ky=(e.ky||0)+Math.sin(a)*kb;
     if(w.kbHold)e.kbHold=w.kbHold}
   dgNums.push({x:e.x+(Math.random()-.5)*10,y:e.y-e.sz,text:''+dmg,crit,life:.8,ml:.8,alpha:1});
