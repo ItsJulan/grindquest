@@ -3272,8 +3272,9 @@ function dgLifesteal(amt){
 const DG_CRK_FULL=760;            // virtual px from origin at full growth (~map span)
 const DG_CRK_SEG=30;              // segment length; also sets vertex spacing for contact
 const DG_CRK_HITS_FULL=6.5;       // consecutive hits to reach full length
-const DG_CRK_WINDOW=10;           // hit counter resets on this cadence; progress does not
-const DG_CRK_GRACE=15;            // seconds without growth before it starts shrinking
+const DG_CRK_WINDOW=10;           // resets c.hits, which nothing reads — growth is a flat
+                                  // 1/6.5 per connect. GRACE is the only decay timer.
+const DG_CRK_GRACE=8;             // seconds without growth before it starts shrinking
 const DG_CRK_SHRINK=.20;          // growth lost per second while shrinking
 const DG_CRK_ASSIST=.16;          // max radians of lean per segment. Weak on purpose:
                                   // an assisted branch should lean, never home.
