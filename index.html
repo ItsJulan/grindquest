@@ -3325,16 +3325,38 @@ function dgCrackBranch(x,y,ang,tgt){
     spl.push({seg,d:cum[i],w:.6+Math.random()*1.1});
   }
   // angular shards rather than round dots
-  const grit=[];
-  for(let i=1;i<pts.length;i++){
-    const p=pts[i],n=Math.random()<.6?2:1;
-    for(let k=0;k<n;k++){
-      const a2=Math.random()*Math.PI*2,r2=7+Math.random()*15;
-      grit.push({x:p.x+Math.cos(a2)*r2,y:p.y+Math.sin(a2)*r2,
-        r:1+Math.random()*2.4,rot:Math.random()*Math.PI,sides:Math.random()<.5?3:4,d:cum[i]});
+  // Path vertices sit 30px apart, so an outline built from them is only ever rough at
+  // 30px and reads as a smooth ribbon. Resampling every ~6px and walking each lip's
+  // width as a bounded random walk gives coherent roughness at the scale rock actually
+  // fractures at, with the odd deep notch to break up the silhouette.
+  const fine=[];
+  {
+    const step=6.2;let seg=0,ml=1,mr=1;
+    for(let d=0;d<=total;d+=step){
+      while(seg<cum.length-2&&cum[seg+1]<d)seg++;
+      const span=Math.max(.001,cum[seg+1]-cum[seg]);
+      const tt=(d-cum[seg])/span;
+      const p=pts[seg],q=pts[Math.min(pts.length-1,seg+1)];
+      const dx=q.x-p.x,dy=q.y-p.y,l=Math.hypot(dx,dy)||1;
+      ml=Math.max(.30,Math.min(1.75,ml+(Math.random()-.5)*.62));
+      mr=Math.max(.30,Math.min(1.75,mr+(Math.random()-.5)*.62));
+      fine.push({x:p.x+dx*tt,y:p.y+dy*tt,d,nx:-dy/l,ny:dx/l,
+        l:ml*(Math.random()<.07?.34:1),
+        r:mr*(Math.random()<.07?.34:1)});
     }
   }
-  return {pts,cum,len:total,assisted:!!tgt,grit,wl,wr,spl};
+  // aggregate: dark pits and bright flecks so the rock is not a flat field
+  const grit=[];
+  for(let i=1;i<pts.length;i++){
+    const p=pts[i],n=2+Math.floor(Math.random()*3);
+    for(let k=0;k<n;k++){
+      const a2=Math.random()*Math.PI*2,r2=6+Math.random()*16;
+      grit.push({x:p.x+Math.cos(a2)*r2,y:p.y+Math.sin(a2)*r2,
+        r:.8+Math.random()*2.2,rot:Math.random()*Math.PI,
+        sides:Math.random()<.5?3:4,lit:Math.random()<.4,d:cum[i]});
+    }
+  }
+  return {pts,cum,fine,len:total,assisted:!!tgt,grit,wl,wr,spl};
 }
 function dgCrackSpawn(x,y){
   const n=4+(Math.random()<.5?1:0);
@@ -3433,32 +3455,29 @@ function dgCrackTip(b,reach){
   for(let i=0;i<b.pts.length;i++){if(b.cum[i]>reach)break;last=b.pts[i]}
   return last;
 }
-function dgCrackHalf(b,i,reach,W0){
-  const along=b.cum[i]/Math.max(1,reach);
-  const narrow=1-along*.60;                       // widest at the impact, thinner outward
-  const tip=Math.min(1,(reach-b.cum[i])/46);      // and closes to a point at the leading edge
+function dgCrackHalfD(d,reach,W0){
+  const along=d/Math.max(1,reach);
+  const narrow=1-along*.58;                       // widest at the impact, thinner outward
+  const tip=Math.min(1,(reach-d)/42);             // and closes to a point at the leading edge
   return W0*narrow*Math.max(0,tip);
 }
+function dgCrackHalf(b,i,reach,W0){return dgCrackHalfD(b.cum[i],reach,W0)}
 // Builds the fracture as a closed outline walked up one lip and back down the other,
 // with independent per-vertex width on each side. Filling that shape is what makes it
 // read as broken ground instead of a stroked pipe.
 function dgCrackPoly(ctx,b,reach,scale,W0){
-  const n=b.pts.length,idx=[];
-  for(let i=0;i<n;i++){if(b.cum[i]>reach)break;idx.push(i)}
-  if(idx.length<2)return false;
-  const nrm=i=>{
-    const a=b.pts[Math.max(0,i-1)],c=b.pts[Math.min(n-1,i+1)];
-    const dx=c.x-a.x,dy=c.y-a.y,l=Math.hypot(dx,dy)||1;
-    return {x:-dy/l,y:dx/l};
-  };
+  const F=b.fine;if(!F||F.length<3)return false;
+  let last=-1;
+  for(let i=0;i<F.length;i++){if(F[i].d>reach)break;last=i}
+  if(last<2)return false;
   ctx.beginPath();
-  for(let k=0;k<idx.length;k++){
-    const i=idx[k],p=b.pts[i],v=nrm(i),h=dgCrackHalf(b,i,reach,W0)*scale*b.wl[i];
-    if(k===0)ctx.moveTo(p.x+v.x*h,p.y+v.y*h);else ctx.lineTo(p.x+v.x*h,p.y+v.y*h);
+  for(let i=0;i<=last;i++){
+    const p=F[i],h=dgCrackHalfD(p.d,reach,W0)*scale*p.l;
+    if(i===0)ctx.moveTo(p.x+p.nx*h,p.y+p.ny*h);else ctx.lineTo(p.x+p.nx*h,p.y+p.ny*h);
   }
-  for(let k=idx.length-1;k>=0;k--){
-    const i=idx[k],p=b.pts[i],v=nrm(i),h=dgCrackHalf(b,i,reach,W0)*scale*b.wr[i];
-    ctx.lineTo(p.x-v.x*h,p.y-v.y*h);
+  for(let i=last;i>=0;i--){
+    const p=F[i],h=dgCrackHalfD(p.d,reach,W0)*scale*p.r;
+    ctx.lineTo(p.x-p.nx*h,p.y-p.ny*h);
   }
   ctx.closePath();
   return true;
@@ -3490,10 +3509,11 @@ function dgDrawCracks(ctx,t){
     if(st)ctx.stroke()}
   ctx.lineJoin='miter';ctx.lineCap='butt';
 
-  // 2. angular shards thrown clear of the break
-  ctx.fillStyle='rgba(17,11,10,'+(.62*fade).toFixed(3)+')';
+  // 2. aggregate — dark pits and bright flecks pit the rock surface
   for(const b of c.branches)for(const g of b.grit){
     if(g.d>reach)continue;
+    ctx.fillStyle=g.lit?'rgba(142,122,110,'+(.20*fade).toFixed(3)+')'
+                       :'rgba(13,8,8,'+(.66*fade).toFixed(3)+')';
     ctx.beginPath();
     for(let k=0;k<g.sides;k++){
       const a2=g.rot+k/g.sides*Math.PI*2,rr=g.r*(k%2?.62:1);
@@ -3524,15 +3544,19 @@ function dgDrawCracks(ctx,t){
 
   ctx.globalCompositeOperation='lighter';
 
-  // 6. bloom lifting out of the gap
-  ctx.fillStyle='rgba(148,22,14,'+(.13*fade).toFixed(3)+')';
-  for(const b of c.branches)if(dgCrackPoly(ctx,b,reach,2.15,W0))ctx.fill();
+  // 6. heat bleeding a short way into the rock — tight, not a wash
+  ctx.fillStyle='rgba(150,20,10,'+(.16*fade).toFixed(3)+')';
+  for(const b of c.branches)if(dgCrackPoly(ctx,b,reach,1.75,W0))ctx.fill();
 
-  // 7. lava sitting in the bottom of the break, pooling where it is widest
-  ctx.fillStyle='rgba(188,26,18,'+(.92*fade).toFixed(3)+')';
-  for(const b of c.branches)if(dgCrackPoly(ctx,b,reach,.60,W0))ctx.fill();
-  ctx.fillStyle='rgba(255,118,48,'+(.80*fade).toFixed(3)+')';
-  for(const b of c.branches)if(dgCrackPoly(ctx,b,reach,.30,W0))ctx.fill();
+  // 7. lava ramped lip-inward: deep red, orange, then white-hot. Each step is a
+  //    narrower inset of the same ragged outline, so the bright core only shows where
+  //    the break is genuinely wide and pinch points stay dull red.
+  const ramp=[[.88,'168,22,12',.88],[.62,'236,74,16',.88],
+              [.36,'255,150,40',.86],[.16,'255,238,186',.82]];
+  for(const step of ramp){
+    ctx.fillStyle='rgba('+step[1]+','+(step[2]*fade).toFixed(3)+')';
+    for(const b of c.branches)if(dgCrackPoly(ctx,b,reach,step[0],W0))ctx.fill();
+  }
 
   // 8. hot pockets drifting outward — brightness travelling, not a moving stripe
   for(const b of c.branches){
