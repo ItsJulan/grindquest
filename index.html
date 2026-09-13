@@ -4428,9 +4428,11 @@ function dgHitEnemy(e,dmg,crit,sx,sy){
   dgHitstop=Math.max(dgHitstop,(w.hstop||.026)*(crit?1.9:1));
   dgShakeAdd((w.kick||2.5)*(crit?1.6:.85),Math.cos(a),Math.sin(a));
   {const sp=dgStealPct()*(dgCrkDmg?.5:1);if(sp>0)dgLifesteal(dmg*sp)}
+  if(!dgCrkDmg){
   if(w.brittle)dgBrittle(e,w);
   if(dgP.powers.includes('freeze'))e.frozen=1.5;
   if(dgP.powers.includes('chain')){let cnt=0;dgEn.forEach(en=>{if(en!==e&&cnt<2&&dgDist(e,en)<100){en.hp-=Math.floor(dmg*.4);dgNums.push({x:en.x,y:en.y-en.sz,text:''+Math.floor(dmg*.4),crit:false,life:.6,ml:.6,alpha:1});cnt++;dgPart.push({x:e.x,y:e.y,vx:0,vy:0,life:.2,ml:.2,color:'#22d3ee',size:3,type:'chain',tx:en.x,ty:en.y});if(en.hp<=0)dgKillEnemy(en)}})}
+  }
   if(e.hp<=0)dgKillEnemy(e);
   return true;
 }
