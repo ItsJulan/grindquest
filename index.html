@@ -3281,6 +3281,7 @@ const DG_CRK_HIT_R=20;            // contact radius around a vertex
 const DG_CRK_BURN=1.5;            // aura seconds, refreshed on contact
 const DG_CRK_TICK=.42;            // aura damage cadence, same as Nova's burn zones
 const DG_CRK_OPEN=.30;
+const DG_CRK_W0=9.5;              // half-width at the impact point, before per-side noise
 let dgCrk=null,dgCrkDmg=false;
 
 function dgCrackBranch(x,y,ang,tgt){
@@ -3300,15 +3301,40 @@ function dgCrackBranch(x,y,ang,tgt){
     cy=Math.max(B.t+4,Math.min(B.b-4,cy+Math.sin(a)*len));
     total+=len;pts.push({x:cx,y:cy});cum.push(total);
   }
+  // Independent width noise per side, so the two lips of the break never mirror each
+  // other. A symmetric outline is what made the first version read as piping.
+  const wl=[],wr=[];
+  for(let i=0;i<pts.length;i++){
+    wl.push(.34+Math.random()*1.25);
+    wr.push(.34+Math.random()*1.25);
+  }
+  // hairline splinters running off the main fracture
+  const spl=[];
+  for(let i=2;i<pts.length;i++){
+    if(Math.random()>.42)continue;
+    const p=pts[i],q=pts[i-1];
+    const base=Math.atan2(p.y-q.y,p.x-q.x)+(Math.random()<.5?1:-1)*(.7+Math.random()*.9);
+    const seg=[{x:p.x,y:p.y}];
+    let sx=p.x,sy=p.y,sa=base,n=1+Math.floor(Math.random()*3);
+    for(let k=0;k<n;k++){
+      sa+=(Math.random()-.5)*1.1;
+      const l=5+Math.random()*11;
+      sx+=Math.cos(sa)*l;sy+=Math.sin(sa)*l;
+      seg.push({x:sx,y:sy});
+    }
+    spl.push({seg,d:cum[i],w:.6+Math.random()*1.1});
+  }
+  // angular shards rather than round dots
   const grit=[];
   for(let i=1;i<pts.length;i++){
-    const p=pts[i],n=Math.random()<.55?2:1;
+    const p=pts[i],n=Math.random()<.6?2:1;
     for(let k=0;k<n;k++){
-      const a2=Math.random()*Math.PI*2,r2=6+Math.random()*13;
-      grit.push({x:p.x+Math.cos(a2)*r2,y:p.y+Math.sin(a2)*r2,r:.7+Math.random()*1.5,d:cum[i]});
+      const a2=Math.random()*Math.PI*2,r2=7+Math.random()*15;
+      grit.push({x:p.x+Math.cos(a2)*r2,y:p.y+Math.sin(a2)*r2,
+        r:1+Math.random()*2.4,rot:Math.random()*Math.PI,sides:Math.random()<.5?3:4,d:cum[i]});
     }
   }
-  return {pts,cum,len:total,assisted:!!tgt,grit};
+  return {pts,cum,len:total,assisted:!!tgt,grit,wl,wr,spl};
 }
 function dgCrackSpawn(x,y){
   const n=4+(Math.random()<.5?1:0);
@@ -3407,78 +3433,144 @@ function dgCrackTip(b,reach){
   for(let i=0;i<b.pts.length;i++){if(b.cum[i]>reach)break;last=b.pts[i]}
   return last;
 }
+function dgCrackHalf(b,i,reach,W0){
+  const along=b.cum[i]/Math.max(1,reach);
+  const narrow=1-along*.60;                       // widest at the impact, thinner outward
+  const tip=Math.min(1,(reach-b.cum[i])/46);      // and closes to a point at the leading edge
+  return W0*narrow*Math.max(0,tip);
+}
+// Builds the fracture as a closed outline walked up one lip and back down the other,
+// with independent per-vertex width on each side. Filling that shape is what makes it
+// read as broken ground instead of a stroked pipe.
+function dgCrackPoly(ctx,b,reach,scale,W0){
+  const n=b.pts.length,idx=[];
+  for(let i=0;i<n;i++){if(b.cum[i]>reach)break;idx.push(i)}
+  if(idx.length<2)return false;
+  const nrm=i=>{
+    const a=b.pts[Math.max(0,i-1)],c=b.pts[Math.min(n-1,i+1)];
+    const dx=c.x-a.x,dy=c.y-a.y,l=Math.hypot(dx,dy)||1;
+    return {x:-dy/l,y:dx/l};
+  };
+  ctx.beginPath();
+  for(let k=0;k<idx.length;k++){
+    const i=idx[k],p=b.pts[i],v=nrm(i),h=dgCrackHalf(b,i,reach,W0)*scale*b.wl[i];
+    if(k===0)ctx.moveTo(p.x+v.x*h,p.y+v.y*h);else ctx.lineTo(p.x+v.x*h,p.y+v.y*h);
+  }
+  for(let k=idx.length-1;k>=0;k--){
+    const i=idx[k],p=b.pts[i],v=nrm(i),h=dgCrackHalf(b,i,reach,W0)*scale*b.wr[i];
+    ctx.lineTo(p.x-v.x*h,p.y-v.y*h);
+  }
+  ctx.closePath();
+  return true;
+}
 function dgDrawCracks(ctx,t){
   const c=dgCrk;if(!c)return;
   const shown=c.shown===undefined?c.growth:c.shown;
   if(shown<=0.001)return;
   const reach=shown*DG_CRK_FULL;
   const op=c.open,fade=op*(c.shrinking?.82:1);
-  const W=1+op*.35;                       // widths swell as it opens
+  const W0=DG_CRK_W0*(.62+op*.38);
 
-  ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
+  ctx.save();
+  ctx.lineJoin='miter';ctx.lineCap='butt';ctx.miterLimit=2;
 
-  // 1. ash and scorched dirt bleeding onto the floor either side
-  ctx.strokeStyle='rgba(26,16,14,'+(.34*fade).toFixed(3)+')';
-  ctx.lineWidth=26*W;
-  for(const b of c.branches){ctx.beginPath();if(dgCrackPath(ctx,b,reach))ctx.stroke()}
-  ctx.strokeStyle='rgba(58,40,32,'+(.30*fade).toFixed(3)+')';
-  ctx.lineWidth=15*W;
-  for(const b of c.branches){ctx.beginPath();if(dgCrackPath(ctx,b,reach))ctx.stroke()}
+  // 1. scorched ground either side — soft, so a stroke is right here
+  ctx.lineJoin='round';ctx.lineCap='round';
+  ctx.strokeStyle='rgba(24,15,13,'+(.32*fade).toFixed(3)+')';
+  ctx.lineWidth=30;
+  for(const b of c.branches){ctx.beginPath();let st=false;
+    for(let i=0;i<b.pts.length;i++){if(b.cum[i]>reach)break;const p=b.pts[i];
+      if(!st){ctx.moveTo(p.x,p.y);st=true}else ctx.lineTo(p.x,p.y)}
+    if(st)ctx.stroke()}
+  ctx.strokeStyle='rgba(62,44,34,'+(.26*fade).toFixed(3)+')';
+  ctx.lineWidth=17;
+  for(const b of c.branches){ctx.beginPath();let st=false;
+    for(let i=0;i<b.pts.length;i++){if(b.cum[i]>reach)break;const p=b.pts[i];
+      if(!st){ctx.moveTo(p.x,p.y);st=true}else ctx.lineTo(p.x,p.y)}
+    if(st)ctx.stroke()}
+  ctx.lineJoin='miter';ctx.lineCap='butt';
 
-  // 2. grit flecks, positioned once at spawn so they never crawl
-  ctx.fillStyle='rgba(20,13,11,'+(.5*fade).toFixed(3)+')';
+  // 2. angular shards thrown clear of the break
+  ctx.fillStyle='rgba(17,11,10,'+(.62*fade).toFixed(3)+')';
   for(const b of c.branches)for(const g of b.grit){
     if(g.d>reach)continue;
-    ctx.beginPath();ctx.arc(g.x,g.y,g.r,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();
+    for(let k=0;k<g.sides;k++){
+      const a2=g.rot+k/g.sides*Math.PI*2,rr=g.r*(k%2?.62:1);
+      const X=g.x+Math.cos(a2)*rr,Y=g.y+Math.sin(a2)*rr;
+      if(k===0)ctx.moveTo(X,Y);else ctx.lineTo(X,Y);
+    }
+    ctx.closePath();ctx.fill();
   }
 
-  // 3. the break itself — a hole, so near-black and wider than the lava
-  ctx.strokeStyle='rgba(9,4,6,'+(.95*fade).toFixed(3)+')';
-  ctx.lineWidth=11*W;
-  for(const b of c.branches){ctx.beginPath();if(dgCrackPath(ctx,b,reach))ctx.stroke()}
+  // 3. hairline splinters running off the fracture
+  ctx.strokeStyle='rgba(12,6,7,'+(.8*fade).toFixed(3)+')';
+  for(const b of c.branches)for(const sp of b.spl){
+    if(sp.d>reach)continue;
+    ctx.lineWidth=sp.w;ctx.beginPath();
+    ctx.moveTo(sp.seg[0].x,sp.seg[0].y);
+    for(let k=1;k<sp.seg.length;k++)ctx.lineTo(sp.seg[k].x,sp.seg[k].y);
+    ctx.stroke();
+  }
+
+  // 4. the break: an irregular hole in the floor
+  ctx.fillStyle='rgba(8,4,5,'+(.96*fade).toFixed(3)+')';
+  for(const b of c.branches)if(dgCrackPoly(ctx,b,reach,1,W0))ctx.fill();
+
+  // 5. a lit lip along one edge, so the floor reads as having broken upward
+  ctx.strokeStyle='rgba(126,96,86,'+(.30*fade).toFixed(3)+')';
+  ctx.lineWidth=1.1;
+  for(const b of c.branches)if(dgCrackPoly(ctx,b,reach,1,W0))ctx.stroke();
 
   ctx.globalCompositeOperation='lighter';
 
-  // 4. bloom spilling out of the break
-  ctx.strokeStyle='rgba(150,20,14,'+(.16*fade).toFixed(3)+')';
-  ctx.lineWidth=30*W;
-  for(const b of c.branches){ctx.beginPath();if(dgCrackPath(ctx,b,reach))ctx.stroke()}
+  // 6. bloom lifting out of the gap
+  ctx.fillStyle='rgba(148,22,14,'+(.13*fade).toFixed(3)+')';
+  for(const b of c.branches)if(dgCrackPoly(ctx,b,reach,2.15,W0))ctx.fill();
 
-  // 5. the lava body, then a hot core on top of it
-  ctx.strokeStyle='rgba(196,26,20,'+(.90*fade).toFixed(3)+')';
-  ctx.lineWidth=6.4*W;
-  for(const b of c.branches){ctx.beginPath();if(dgCrackPath(ctx,b,reach))ctx.stroke()}
-  ctx.strokeStyle='rgba(255,126,58,'+(.85*fade).toFixed(3)+')';
-  ctx.lineWidth=2.7*W;
-  for(const b of c.branches){ctx.beginPath();if(dgCrackPath(ctx,b,reach))ctx.stroke()}
+  // 7. lava sitting in the bottom of the break, pooling where it is widest
+  ctx.fillStyle='rgba(188,26,18,'+(.92*fade).toFixed(3)+')';
+  for(const b of c.branches)if(dgCrackPoly(ctx,b,reach,.60,W0))ctx.fill();
+  ctx.fillStyle='rgba(255,118,48,'+(.80*fade).toFixed(3)+')';
+  for(const b of c.branches)if(dgCrackPoly(ctx,b,reach,.30,W0))ctx.fill();
 
-  // 6. bright pulses running outward along the channel — a dashed stroke with a
-  //    moving offset reads as flow for the price of one more pass
-  ctx.setLineDash([16,64]);
-  ctx.lineDashOffset=-t*90;
-  ctx.strokeStyle='rgba(255,214,150,'+(.75*fade).toFixed(3)+')';
-  ctx.lineWidth=3.4*W;
-  for(const b of c.branches){ctx.beginPath();if(dgCrackPath(ctx,b,reach))ctx.stroke()}
-  ctx.setLineDash([]);
+  // 8. hot pockets drifting outward — brightness travelling, not a moving stripe
+  for(const b of c.branches){
+    for(let i=1;i<b.pts.length;i++){
+      if(b.cum[i]>reach)break;
+      const ph=((b.cum[i]-t*95)%150+150)%150;
+      if(ph>34)continue;
+      const k=1-ph/34,p=b.pts[i];
+      const h=dgCrackHalf(b,i,reach,W0);
+      if(h<1.2)continue;
+      const g2=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,h*2.1);
+      g2.addColorStop(0,'rgba(255,232,186,'+(.62*k*fade).toFixed(3)+')');
+      g2.addColorStop(.5,'rgba(255,120,40,'+(.26*k*fade).toFixed(3)+')');
+      g2.addColorStop(1,'rgba(160,20,10,0)');
+      ctx.fillStyle=g2;ctx.beginPath();ctx.arc(p.x,p.y,h*2.1,0,Math.PI*2);ctx.fill();
+    }
+  }
 
-  // 7. the advancing edge flares while it is actually spreading
+  // 9. the leading edge flares while it is actually spreading
   if(c.pulse>0){
     const pw=c.pulse;
     for(const b of c.branches){
-      const tip=dgCrackTip(b,reach);if(!tip)continue;
-      const g=ctx.createRadialGradient(tip.x,tip.y,0,tip.x,tip.y,26*pw+8);
-      g.addColorStop(0,'rgba(255,236,198,'+(.85*pw).toFixed(3)+')');
-      g.addColorStop(.45,'rgba(255,110,40,'+(.34*pw).toFixed(3)+')');
-      g.addColorStop(1,'rgba(180,20,10,0)');
-      ctx.fillStyle=g;ctx.beginPath();ctx.arc(tip.x,tip.y,26*pw+8,0,Math.PI*2);ctx.fill();
+      let tip=null;
+      for(let i=0;i<b.pts.length;i++){if(b.cum[i]>reach)break;tip=b.pts[i]}
+      if(!tip)continue;
+      const g3=ctx.createRadialGradient(tip.x,tip.y,0,tip.x,tip.y,24*pw+7);
+      g3.addColorStop(0,'rgba(255,238,202,'+(.8*pw).toFixed(3)+')');
+      g3.addColorStop(.45,'rgba(255,104,36,'+(.3*pw).toFixed(3)+')');
+      g3.addColorStop(1,'rgba(170,18,10,0)');
+      ctx.fillStyle=g3;ctx.beginPath();ctx.arc(tip.x,tip.y,24*pw+7,0,Math.PI*2);ctx.fill();
     }
   }
-  // 8. the origin keeps a hot glow, brightest during the opening beat
-  {const og=ctx.createRadialGradient(c.ox,c.oy,0,c.ox,c.oy,30+14*(1-op));
-   og.addColorStop(0,'rgba(255,224,176,'+(.5*fade*(.55+.45*(1-op))).toFixed(3)+')');
-   og.addColorStop(.5,'rgba(220,50,22,'+(.22*fade).toFixed(3)+')');
-   og.addColorStop(1,'rgba(140,16,10,0)');
-   ctx.fillStyle=og;ctx.beginPath();ctx.arc(c.ox,c.oy,30+14*(1-op),0,Math.PI*2);ctx.fill()}
+  // 10. the impact point stays hot
+  {const og=ctx.createRadialGradient(c.ox,c.oy,0,c.ox,c.oy,28+13*(1-op));
+   og.addColorStop(0,'rgba(255,222,172,'+(.46*fade*(.55+.45*(1-op))).toFixed(3)+')');
+   og.addColorStop(.5,'rgba(216,48,20,'+(.20*fade).toFixed(3)+')');
+   og.addColorStop(1,'rgba(136,14,9,0)');
+   ctx.fillStyle=og;ctx.beginPath();ctx.arc(c.ox,c.oy,28+13*(1-op),0,Math.PI*2);ctx.fill()}
 
   ctx.restore();ctx.globalCompositeOperation='source-over';ctx.globalAlpha=1;
 }
